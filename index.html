@@ -385,7 +385,6 @@
         let mapaTacto = null;
         let grupoMarcadores = null;
 
-        // SISTEMA DE NAVEGACIÓN ESTABLE
         function navegarA(idPantalla) {
             const container = document.getElementById('mainContainer');
             
@@ -456,7 +455,6 @@
             navegarA('screenMap');
         }
 
-        // CONTROL DE MENÚS DESPLEGABLES ANIDADOS
         function controlarSubCategorias(tipo) {
             if(tipo === 'What') {
                 const val = document.getElementById('selectWhat').value;
@@ -497,6 +495,7 @@
             }
         }
 
+        // MOTOR DE ENVÍO CORREGIDO PARA EVITAR RECHAZOS CORS
         function validarYGuardarFormulario(event) {
             event.preventDefault();
             const alertBox = document.getElementById('feedbackAlert');
@@ -507,7 +506,6 @@
 
             const coordenadasRaw = document.getElementById('mgrsInput').value;
 
-            // Recopilar subcategorías seleccionadas activas
             const mainWhat = document.getElementById('selectWhat').value;
             let finalWhat = mainWhat;
             if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
@@ -544,13 +542,18 @@
                 latLon: coordenadasRaw
             };
 
+            // Convertimos los datos a un formulario tradicional para saltear bloqueos CORS de Google
+            const formBody = new FormData();
+            for (const key in datosParaEnviar) {
+                formBody.append(key, datosParaEnviar[key]);
+            }
+
             const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbzvwFxy8bpQ9VOpaumZllIvSS9zd4klt1IVTBbNJzHHRWPgx7BQ7XtOJoKe64Q3hQwA/exec";
 
+            // Se quita el modo "no-cors" y se transmite usando el formato FormData compatible
             fetch(urlGoogleSheets, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datosParaEnviar)
+                body: formBody
             })
             .then(() => {
                 baseDeDatosReportes.push(datosParaEnviar);
@@ -560,9 +563,13 @@
                 document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
                 setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 1500);
             })
-            .catch(() => {
+            .catch((error) => {
+                console.error("Error detectado:", error);
+                // Si falla por políticas de red, igual guardamos en la tabla local para no perder el ejercicio
+                baseDeDatosReportes.push(datosParaEnviar);
                 alertBox.style.backgroundColor = "#dc2626";
-                alertBox.innerHTML = "❌ Error de conexión.";
+                alertBox.innerHTML = "⚠️ Guardado localmente. Verifique permisos del script de Google.";
+                setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 2000);
             });
         }
 
