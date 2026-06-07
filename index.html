@@ -480,10 +480,12 @@
         }
 
         function irAMapa(origen) {
-            pantallaOrigenMapa = origen;
-            document.getElementById('btnBackFromMap').onclick = function() { navegarA(pantallaOrigenMapa); };
-            navegarA('screenMap');
-        }
+    pantallaOrigenMapa = origen;
+    document.getElementById('btnBackFromMap').onclick = function() { navegarA(pantallaOrigenMapa); };
+    navegarA('screenMap');
+    // Forzamos a que lea a Google Sheets e inicialice los pines inmediatamente
+    inicializarMapaNativo(); 
+}
 
         function controlarSubCategorias(tipo) {
             if(tipo === 'What') {
