@@ -493,6 +493,93 @@
             const verificarCoords = coordenadasRaw.split(',').map(num => parseFloat(num.trim()));
             if(verificarCoords.length !== 2 || isNaN(verificarCoords[0]) || isNaN(verificarCoords[1])) {
                 alertBox.className = "alert alert-error";
+                alertBox.innerHTML = `⚠️ Formato de coordenadas inválido. Debe escribir Latitud y Longitud separadas por una coma (Ej: -36.6725, -64.3795).`;
+                alertBox.style.display = "block";
+                return;
+            }
+
+            const mainWhat = document.getElementById('selectWhat').value;
+            let finalWhat = mainWhat;
+            if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
+            if(mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
+
+            const mainWho = document.getElementById('selectWho').value;
+            let finalWho = mainWho;
+            if(mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` -> ${document.getElementById('subWhoPerpSelect').value}`;
+            if(mainWho === 'PARTICIPANTS') finalWho += ` -> ${document.getElementById('subWhoPartSelect').value}`;
+            if(mainWho === 'ORGANIZERS') {
+                const orgSub = document.getElementById('selectOrg').value;
+                finalWho += ` -> ${orgSub}`;
+                if(orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
+            }
+
+            const mainSector = document.getElementById('selectSector').value;
+            let finalSector = mainSector;
+            if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
+
+            const rawEvDate = document.getElementById('evDate').value;
+            const rawEvTime = document.getElementById('evTime').value;
+            const rawRepDate = document.getElementById('repDate').value;
+            const rawRepTime = document.getElementById('repTime').value;
+
+            const reporteID = `#${secuencialID++}`;
+
+            alertBox.className = "alert";
+            alertBox.style.display = "block";
+            alertBox.innerHTML = "⏳ Transmitiendo reporte táctico a la base de datos central de Google Sheets...";
+
+            // RECOPILACIÓN DE LOS DATOS EXACTOS EN EL FORMATO PARA GOOGLE SHEETS
+            const datosParaEnviar = {
+                id: reporteID,
+                eventDate: `${formatearFechaVista(rawEvDate)} - ${rawEvTime}hs`,
+                categories: document.getElementById('inputForm').value,
+                title: titulo,
+                what: finalWhat,
+                where: finalSector + ` (Coordenadas: ${coordenadasRaw} - ${document.getElementById('inputLocName').value})`,
+                who: finalWho,
+                author: document.getElementById('inputOfficer').value,
+                sectorBase: mainSector,
+                submitDate: `${formatearFechaVista(rawRepDate)} - ${rawRepTime}hs`,
+                status: document.getElementById('inputStatus').value,
+                latLon: coordenadasRaw
+            };
+
+            // CONEXIÓN DIRECTA CON TU GOOGLE SHEETS WEB APP URL
+            const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbzvwFxy8bpQ9VOpaumZllIvSS9zd4klt1IVTBbNJzHHRWPgx7BQ7XtOJoKe64Q3hQwA/exec";
+
+            fetch(urlGoogleSheets, {
+                method: "POST",
+                mode: "no-cors", // Evita bloqueos de seguridad de origen en navegadores modernos
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datosParaEnviar)
+            })
+            .then(() => {
+                // Agregar al registro visual interno de la web para mantener el pin en Toay
+                baseDeDatosReportes.push(datosParaEnviar);
+
+                alertBox.className = "alert alert-success";
+                alertBox.innerHTML = `✅ ¡Reporte ${reporteID} enviado con éxito! Datos sincronizados en Google Sheets y pin satelital fijado en Toay.`;
+                
+                document.getElementById('sageForm').reset();
+                document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
+                
+                setTimeout(() => {
+                    alertBox.style.display = "none";
+                    irABaseDatos('screenSageHub');
+                }, 2000);
+            })
+            .catch(error => {
+                console.error("Error en la transmisión:", error);
+                alertBox.className = "alert alert-error";
+                alertBox.innerHTML = "❌ Error en el enlace de comunicaciones. Los datos no pudieron impactar en el Google Sheets.";
+            });
+        }
+
+            // Validar coordenadas Lat, Lon ingresadas
+            const coordenadasRaw = document.getElementById('mgrsInput').value;
+            const verificarCoords = coordenadasRaw.split(',').map(num => parseFloat(num.trim()));
+            if(verificarCoords.length !== 2 || isNaN(verificarCoords[0]) || isNaN(verificarCoords[1])) {
+                alertBox.className = "alert alert-error";
                 alertBox.innerHTML = `⚠️ Formato de coordenadas inválido. Debe escribir Latitud y Longitud separadas por una coma (Ej: 35.17, 33.36).`;
                 alertBox.style.display = "block";
                 return;
