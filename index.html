@@ -51,7 +51,7 @@
         .report-cell-item { margin-bottom: 4px; }
         .empty-db { padding: 30px; text-align: center; color: #94a3b8; font-style: italic; }
 
-        /* CONTENEDOR NUEVO DEL MAPA LEAFLET */
+        /* CONTENEDOR MAPA LEAFLET SATELITAL */
         .map-iframe-wrapper { 
             width: 100%; 
             height: 720px !important; 
@@ -266,7 +266,7 @@
 
                     <div class="form-group">
                         <label class="required">18. COORDINATES (Lat, Lon)</label>
-                        <input type="text" id="mgrsInput" required placeholder="Ej: 35.1725, 33.3621">
+                        <input type="text" id="mgrsInput" required placeholder="Ej: -36.6725, -64.3795">
                     </div>
 
                     <div class="form-group full-width">
@@ -330,7 +330,6 @@
         let pantallaOrigenDB = 'screenHome';
         let pantallaOrigenMapa = 'screenHome';
         
-        // Variables Globales del mapa
         let mapaTacto = null;
         let grupoMarcadores = null; 
 
@@ -349,30 +348,25 @@
             document.getElementById(idPantalla).classList.add('active');
             window.scrollTo(0, 0);
 
-            // Si entra a la pantalla del mapa, forzamos a Leaflet a recalcular sus dimensiones
             if(idPantalla === 'screenMap') {
                 inicializarMapaNativo();
             }
         }
 
-        // FUNCIÓN QUE CONSTRUYE EL MAPA EN TIEMPO REAL
         function inicializarMapaNativo() {
-            // Si el mapa no existe, lo creamos
             if (mapaTacto === null) {
-                // Centrado operacional en Toay, La Pampa, Argentina (Zoom 13 para ver detalles del terreno)
+                // Centrado operacional en Toay, La Pampa, Argentina (Zoom 13)
                 mapaTacto = L.map('map').setView([-36.6735, -64.3795], 13);
 
-                   // Capa Satelital de Alta Resolución (Esri World Imagery)
-   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-       maxZoom: 19,
-       attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-   }).addTo(mapaTacto);
+                // Capa Satelital de Alta Resolución (Esri World Imagery)
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: 'Tiles © Esri'
+                }).addTo(mapaTacto);
 
-                // Grupo dinámico de pines
                 grupoMarcadores = L.layerGroup().addTo(mapaTacto);
             }
 
-            // Limpiamos los pines viejos y redibujamos con los datos actualizados
             grupoMarcadores.clearLayers();
 
             baseDeDatosReportes.forEach(rep => {
@@ -380,7 +374,6 @@
                     const coords = rep.latLon.split(',').map(num => parseFloat(num.trim()));
                     if(coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
                         
-                        // Diseñamos el recuadro interactivo (Popup) que se abre al hacer clic al Pin
                         const contenidoPopup = `
                             <div style="color: #0f172a; font-family: sans-serif; font-size:13px; line-height:1.4;">
                                 <strong style="color:#009EDB;">${rep.id} - ${rep.title}</strong><br>
@@ -392,13 +385,11 @@
                             </div>
                         `;
 
-                        // Añadir pin al mapa
                         L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(contenidoPopup);
                     }
                 }
             });
 
-            // Reajusta los tamaños para evitar que el mapa se renderice entrecortado
             setTimeout(() => {
                 mapaTacto.invalidateSize();
             }, 200);
@@ -488,7 +479,6 @@
                 return;
             }
 
-            // Validar coordenadas Lat, Lon ingresadas
             const coordenadasRaw = document.getElementById('mgrsInput').value;
             const verificarCoords = coordenadasRaw.split(',').map(num => parseFloat(num.trim()));
             if(verificarCoords.length !== 2 || isNaN(verificarCoords[0]) || isNaN(verificarCoords[1])) {
@@ -528,7 +518,6 @@
             alertBox.style.display = "block";
             alertBox.innerHTML = "⏳ Transmitiendo reporte táctico a la base de datos central de Google Sheets...";
 
-            // RECOPILACIÓN DE LOS DATOS EXACTOS EN EL FORMATO PARA GOOGLE SHEETS
             const datosParaEnviar = {
                 id: reporteID,
                 eventDate: `${formatearFechaVista(rawEvDate)} - ${rawEvTime}hs`,
@@ -544,17 +533,15 @@
                 latLon: coordenadasRaw
             };
 
-            // CONEXIÓN DIRECTA CON TU GOOGLE SHEETS WEB APP URL
             const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbzvwFxy8bpQ9VOpaumZllIvSS9zd4klt1IVTBbNJzHHRWPgx7BQ7XtOJoKe64Q3hQwA/exec";
 
             fetch(urlGoogleSheets, {
                 method: "POST",
-                mode: "no-cors", // Evita bloqueos de seguridad de origen en navegadores modernos
+                mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datosParaEnviar)
             })
             .then(() => {
-                // Agregar al registro visual interno de la web para mantener el pin en Toay
                 baseDeDatosReportes.push(datosParaEnviar);
 
                 alertBox.className = "alert alert-success";
@@ -573,76 +560,6 @@
                 alertBox.className = "alert alert-error";
                 alertBox.innerHTML = "❌ Error en el enlace de comunicaciones. Los datos no pudieron impactar en el Google Sheets.";
             });
-        }
-
-            // Validar coordenadas Lat, Lon ingresadas
-            const coordenadasRaw = document.getElementById('mgrsInput').value;
-            const verificarCoords = coordenadasRaw.split(',').map(num => parseFloat(num.trim()));
-            if(verificarCoords.length !== 2 || isNaN(verificarCoords[0]) || isNaN(verificarCoords[1])) {
-                alertBox.className = "alert alert-error";
-                alertBox.innerHTML = `⚠️ Formato de coordenadas inválido. Debe escribir Latitud y Longitud separadas por una coma (Ej: 35.17, 33.36).`;
-                alertBox.style.display = "block";
-                return;
-            }
-
-            const mainWhat = document.getElementById('selectWhat').value;
-            let finalWhat = mainWhat;
-            if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
-            if(mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
-
-            const mainWho = document.getElementById('selectWho').value;
-            let finalWho = mainWho;
-            if(mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` -> ${document.getElementById('subWhoPerpSelect').value}`;
-            if(mainWho === 'PARTICIPANTS') finalWho += ` -> ${document.getElementById('subWhoPartSelect').value}`;
-            if(mainWho === 'ORGANIZERS') {
-                const orgSub = document.getElementById('selectOrg').value;
-                finalWho += ` -> ${orgSub}`;
-                if(orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
-            }
-
-            const mainSector = document.getElementById('selectSector').value;
-            let finalSector = mainSector;
-            if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
-
-            const rawEvDate = document.getElementById('evDate').value;
-            const rawEvTime = document.getElementById('evTime').value;
-            const rawRepDate = document.getElementById('repDate').value;
-            const rawRepTime = document.getElementById('repTime').value;
-
-            const reporteID = `#${secuencialID++}`;
-
-            alertBox.className = "alert";
-            alertBox.style.display = "block";
-            alertBox.innerHTML = "⏳ Guardando reporte de entrenamiento y pintando pin táctico...";
-
-            // Simulación del guardado exitoso local
-            setTimeout(() => {
-                baseDeDatosReportes.push({
-                    id: reporteID,
-                    eventDate: `${formatearFechaVista(rawEvDate)} - ${rawEvTime}hs`,
-                    categories: document.getElementById('inputForm').value,
-                    title: titulo,
-                    what: finalWhat,
-                    where: finalSector + ` (Coordenadas: ${coordenadasRaw} - ${document.getElementById('inputLocName').value})`,
-                    who: finalWho,
-                    author: document.getElementById('inputOfficer').value,
-                    sectorBase: mainSector,
-                    submitDate: `${formatearFechaVista(rawRepDate)} - ${rawRepTime}hs`,
-                    status: document.getElementById('inputStatus').value,
-                    latLon: coordenadasRaw // Guardamos las coordenadas para el mapa dinámico
-                });
-
-                alertBox.className = "alert alert-success";
-                alertBox.innerHTML = `✅ ¡Reporte ${reporteID} registrado con éxito! Pin añadido al mapa táctico.`;
-                
-                document.getElementById('sageForm').reset();
-                document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
-                
-                setTimeout(() => {
-                    alertBox.style.display = "none";
-                    irABaseDatos('screenSageHub');
-                }, 1500);
-            }, 1000);
         }
 
         function renderizarTabla() {
