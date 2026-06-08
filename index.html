@@ -420,55 +420,60 @@
         grupoMarcadores = L.layerGroup().addTo(mapaTacto);
     }
 
-    // Limpiamos los pines viejos de la pantalla
+    // Limpiamos la pantalla por completo antes de dibujar
     grupoMarcadores.clearLayers();
 
-    // 2. LLAMADO AL MASTER MAP (Google Sheets) para traer TODOS los pines reales de los estudiantes
-    fetch(urlGoogleSheets)
-    .then(response => response.json())
-    .then(pinesDelSheet => {
-        // Combinamos lo que tenemos en memoria local con lo que bajó del Sheets (sin duplicar por ID)
-        pinesDelSheet.forEach(repSheet => {
-            const existe = baseDeDatosReportes.some(r => r.id === repSheet.id);
-            if(!existe) {
-                baseDeDatosReportes.push(repSheet);
-            }
-        });
+    // FUNCIÓN INTERNA MEJORADA: Procesa las coordenadas de manera ultra segura
+    function dibujarPin(rep) {
+        if (!rep || !rep.latLon) return;
+        
+        let coordsStr = String(rep.latLon).trim();
+        if (!coordsStr.includes(',')) return; // Si no tiene coma, no es una coordenada válida
+        
+        const coords = coordsStr.split(',').map(num => parseFloat(num.trim()));
+        
+        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+            const contenidoPopup = `
+                <div style="color: #0f172a; font-family: sans-serif; font-size:13px; min-width: 200px;">
+                    <strong style="color:#009EDB;">${rep.id || '#'} - ${rep.title || 'Reporte'}</strong><br><br>
+                    <b>What:</b> ${rep.what || 'N/A'}<br>
+                    <b>Who:</b> ${rep.who || 'N/A'}<br>
+                    <b>Location:</b> ${rep.where || 'N/A'}<br>
+                    <b>Officer:</b> ${rep.author || 'N/A'}<br>
+                    <b>Status:</b> <span style="color:${rep.status === 'OPEN' ? '#b45309':'#15803d'}; font-weight:bold;">${rep.status || 'OPEN'}</span>
+                </div>
+            `;
+            L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(contenidoPopup);
+        }
+    }
 
-        // 3. Dibujar todos los pines consolidados en el mapa táctico
+    // 2. DIBUJAR AL INSTANTE LOS PINES LOCALES (Garantiza visualización inmediata para el alumno)
+    if (Array.isArray(baseDeDatosReportes)) {
         baseDeDatosReportes.forEach(rep => {
-            if(rep.latLon) {
-                const coords = rep.latLon.split(',').map(num => parseFloat(num.trim()));
-                if(coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-                    const contenidoPopup = `
-                        <div style="color: #0f172a; font-family: sans-serif; font-size:13px; min-width: 200px;">
-                            <strong style="color:#009EDB;">${rep.id} - ${rep.title}</strong><br><br>
-                            <b>What:</b> ${rep.what}<br>
-                            <b>Who:</b> ${rep.who}<br>
-                            <b>Location:</b> ${rep.where}<br>
-                            <b>Reporting Officer:</b> ${rep.author}<br>
-                            <b>Status:</b> <span style="color:${rep.status === 'OPEN' ? '#b45309':'#15803d'}; font-weight:bold;">${rep.status}</span>
-                        </div>
-                    `;
-                    L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(contenidoPopup);
-                }
-            }
+            dibujarPin(rep);
         });
-    })
-    .catch(error => {
-        console.error("Error cargando el Master Map desde Sheets:", error);
-        // Si falla internet o el Sheet, al menos dibuja lo que el alumno cargó en su sesión local
-        baseDeDatosReportes.forEach(rep => {
-            if(rep.latLon) {
-                const coords = rep.latLon.split(',').map(num => parseFloat(num.trim()));
-                if(coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-                    L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(`<b>${rep.id} (Local)</b><br>${rep.title}`);
-                }
-            }
-        });
-    });
+    }
 
-    // Forzar el redibujado correcto de Leaflet por si cambia el tamaño de la pantalla
+    // 3. TRAER EL HISTORIAL GENERAL DEL SHEETS SIN APAGAR LA PANTALLA SI FALLA
+    if (typeof urlGoogleSheets !== 'undefined' && urlGoogleSheets.trim() !== "") {
+        fetch(urlGoogleSheets)
+        .then(response => response.json())
+        .then(pinesDelSheet => {
+            if (Array.isArray(pinesDelSheet)) {
+                pinesDelSheet.forEach(repSheet => {
+                    const existe = baseDeDatosReportes.some(r => String(r.id) === String(repSheet.id));
+                    if (!existe) {
+                        baseDeDatosReportes.push(repSheet);
+                        dibujarPin(repSheet);
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.warn("Modo local activo. No se pudo sincronizar el historial completo:", error);
+        });
+    }
+
     setTimeout(() => { mapaTacto.invalidateSize(); }, 250);
 }
 
