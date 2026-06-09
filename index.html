@@ -589,8 +589,10 @@
         });
     }
 
-    // Si el alumno subió un archivo
-    if (fileInput.files.length > 0) {
+    // === REEMPLAZA DESDE AQUÍ EN TU INDEX.HTML ===
+    const fileInput = document.getElementById('fileInput');
+
+    if (fileInput && fileInput.files.length > 0) {
         const file = fileInput.files[0];
         const formDataCloud = new FormData();
         formDataCloud.append('image', file);
@@ -602,19 +604,24 @@
         })
         .then(response => response.json())
         .then(result => {
-            if (result.success) {
-                datosParaEnviar.fileUrl = result.data.url; // Asignamos la URL real corta
+            if (result.success && result.data && result.data.url) {
+                // Forzamos a que guarde la URL real y corta que nos dio el servidor
+                datosParaEnviar.fileUrl = result.data.url; 
                 enviarAGoogleSheets();
             } else {
-                alertBox.innerHTML = "❌ Error al procesar el archivo en la nube, enviando sin adjunto...";
-                setTimeout(enviarAGoogleSheets, 1500);
+                console.log("La API no respondió con éxito, enviando como No adjunto");
+                datosParaEnviar.fileUrl = "No adjunto";
+                enviarAGoogleSheets();
             }
         })
-        .catch(() => {
-            alertBox.innerHTML = "❌ Error en servidor de archivos, enviando sin adjunto...";
-            setTimeout(enviarAGoogleSheets, 1500);
+        .catch((err) => {
+            console.error("Error en la subida:", err);
+            datosParaEnviar.fileUrl = "No adjunto";
+            enviarAGoogleSheets();
         });
     } else {
+        // Si el alumno realmente no subió nada
+        datosParaEnviar.fileUrl = "No adjunto";
         enviarAGoogleSheets();
     }
 }
