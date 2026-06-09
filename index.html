@@ -589,7 +589,8 @@
         });
     }
 
-    // === REEMPLAZA DESDE AQUÍ EN TU INDEX.HTML ===
+    // ... Todo el código anterior de la función de arriba ...
+
     const fileInput = document.getElementById('fileInput');
 
     if (fileInput && fileInput.files.length > 0) {
@@ -624,7 +625,7 @@
         datosParaEnviar.fileUrl = "No adjunto";
         enviarAGoogleSheets();
     }
-}
+} // <-- REVISIÓN CLAVE: Esta llave cierra "validarYGuardarFormulario". Debe haber SOLO UNA aquí.
 
         function renderizarTabla() {
             const tableBody = document.getElementById('dbTableBody');
