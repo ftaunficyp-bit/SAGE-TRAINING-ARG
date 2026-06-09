@@ -524,7 +524,7 @@
     alertBox.style.color = "white";
     alertBox.style.backgroundColor = "#b45309";
     alertBox.style.display = "block";
-    alertBox.innerHTML = "⏳ Transmitiendo reporte táctico y procesando archivos adjuntos...";
+    alertBox.innerHTML = "⏳ Subiendo imagen a la nube pública e indexando reporte...";
 
     const coordenadasRaw = document.getElementById('mgrsInput').value;
     const mainWhat = document.getElementById('selectWhat').value;
@@ -560,45 +560,62 @@
         sectorBase: mainSector,
         submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
         status: document.getElementById('inputStatus').value,
-        latLon: coordenadasRaw
+        latLon: coordenadasRaw,
+        fileUrl: "No adjunto" // Por defecto
     };
 
     const fileInput = document.getElementById('fileInput');
 
-    function enviarDatosCompletos(formularioFinal) {
-        fetch(urlGoogleSheets, { method: "POST", body: formularioFinal })
+    // Función interna para enviar los datos limpios a Google
+    function enviarAGoogleSheets() {
+        const formBody = new FormData();
+        for (const key in datosParaEnviar) {
+            formBody.append(key, datosParaEnviar[key]);
+        }
+
+        fetch(urlGoogleSheets, { method: "POST", body: formBody })
         .then(() => {
             baseDeDatosReportes.push(datosParaEnviar);
             alertBox.style.backgroundColor = "#16a34a";
-            alertBox.innerHTML = `✅ ¡Reporte ${reporteID} procesado con éxito!`;
+            alertBox.innerHTML = `✅ ¡Reporte ${reporteID} enviado con éxito!`;
             document.getElementById('sageForm').reset();
             document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
             setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 1500);
         })
         .catch((error) => {
-            console.error("Error de red:", error);
-            baseDeDatosReportes.push(datosParaEnviar);
+            console.error("Error:", error);
             alertBox.style.backgroundColor = "#dc2626";
-            alertBox.innerHTML = "⚠️ Guardado localmente.";
-            setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 2000);
+            alertBox.innerHTML = "⚠️ Error de conexión con la base de datos.";
         });
     }
 
+    // Si el alumno subió un archivo
     if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const formBody = new FormData();
-            for (const key in datosParaEnviar) { formBody.append(key, datosParaEnviar[key]); }
-            // Enviamos la cadena de datos base64 directamente como parámetro limpio
-            formBody.append("fileData", e.target.result);
-            enviarDatosCompletos(formBody);
-        };
-        reader.readAsDataURL(file);
+        const formDataCloud = new FormData();
+        formDataCloud.append('image', file);
+
+        // Subimos de forma anónima a la API libre de ImgBB
+        fetch('https://api.imgbb.com/1/upload?key=62f831b0e358c5f49dfbd92bfbc0fb5e', {
+            method: 'POST',
+            body: formDataCloud
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                datosParaEnviar.fileUrl = result.data.url; // Asignamos la URL real corta
+                enviarAGoogleSheets();
+            } else {
+                alertBox.innerHTML = "❌ Error al procesar el archivo en la nube, enviando sin adjunto...";
+                setTimeout(enviarAGoogleSheets, 1500);
+            }
+        })
+        .catch(() => {
+            alertBox.innerHTML = "❌ Error en servidor de archivos, enviando sin adjunto...";
+            setTimeout(enviarAGoogleSheets, 1500);
+        });
     } else {
-        const formBody = new FormData();
-        for (const key in datosParaEnviar) { formBody.append(key, datosParaEnviar[key]); }
-        enviarDatosCompletos(formBody);
+        enviarAGoogleSheets();
     }
 }
 
