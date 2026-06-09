@@ -539,7 +539,7 @@
     alertBox.style.color = "white";
     alertBox.style.backgroundColor = "#b45309";
     alertBox.style.display = "block";
-    alertBox.innerHTML = "⏳ Transmitiendo reporte táctico y archivos a Google...";
+    alertBox.innerHTML = "⏳ Transmitiendo reporte táctico y procesando archivos...";
 
     const coordenadasRaw = document.getElementById('mgrsInput').value;
 
@@ -580,8 +580,8 @@
     };
 
     const fileInput = document.getElementById('fileInput');
-    
-    // Función interna para despachar los datos por red
+
+    // Función interna encargada de enviar los datos finales por red
     function enviarDatosCompletos(formularioFinal) {
         fetch(urlGoogleSheets, {
             method: "POST",
@@ -604,26 +604,37 @@
         });
     }
 
-    // Preparar el contenedor del formulario tradicional compatible con CORS
-    const formBody = new FormData();
-    for (const key in datosParaEnviar) {
-        formBody.append(key, datosParaEnviar[key]);
-    }
-
-    // SI EL OPERADOR SUBIÓ UN ARCHIVO, LO CONVERTIMOS A BASE64 ANTES DE ENVIAR
+    // SI EL OPERADOR ADJUNTÓ UN ARCHIVO, SE PROCESA PRIMERO DE FORMA OBLIGATORIA
     if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         const reader = new FileReader();
         
         reader.onload = function(e) {
+            // Recién cuando el archivo terminó de leerse por completo, armamos el paquete FormData
+            const formBody = new FormData();
+            
+            // Metemos los textos ordinarios
+            for (const key in datosParaEnviar) {
+                formBody.append(key, datosParaEnviar[key]);
+            }
+            
+            // Adjuntamos las variables del archivo ya codificado
             formBody.append("fileData", e.target.result);
             formBody.append("fileName", `${reporteID}_${file.name}`);
             formBody.append("fileType", file.type);
+            
+            // Se efectúa el despacho completo
             enviarDatosCompletos(formBody);
         };
+        
+        // Disparamos la lectura del archivo
         reader.readAsDataURL(file);
     } else {
-        // Si no subió nada, se envía el reporte de texto normal
+        // En caso excepcional de que no haya archivo (fallbacks), manda solo texto
+        const formBody = new FormData();
+        for (const key in datosParaEnviar) {
+            formBody.append(key, datosParaEnviar[key]);
+        }
         enviarDatosCompletos(formBody);
     }
 }
