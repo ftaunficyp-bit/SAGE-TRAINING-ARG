@@ -561,12 +561,9 @@
         submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
         status: document.getElementById('inputStatus').value,
         latLon: coordenadasRaw,
-        fileUrl: "No adjunto" // Por defecto
+        fileUrl: "No adjunto" 
     };
 
-    const fileInput = document.getElementById('fileInput');
-
-    // Función interna para enviar los datos limpios a Google
     function enviarAGoogleSheets() {
         const formBody = new FormData();
         for (const key in datosParaEnviar) {
@@ -589,8 +586,6 @@
         });
     }
 
-    // ... Todo el código anterior de la función de arriba ...
-
     const fileInput = document.getElementById('fileInput');
 
     if (fileInput && fileInput.files.length > 0) {
@@ -598,7 +593,6 @@
         const formDataCloud = new FormData();
         formDataCloud.append('image', file);
 
-        // Subimos de forma anónima a la API libre de ImgBB
         fetch('https://api.imgbb.com/1/upload?key=62f831b0e358c5f49dfbd92bfbc0fb5e', {
             method: 'POST',
             body: formDataCloud
@@ -606,11 +600,9 @@
         .then(response => response.json())
         .then(result => {
             if (result.success && result.data && result.data.url) {
-                // Forzamos a que guarde la URL real y corta que nos dio el servidor
                 datosParaEnviar.fileUrl = result.data.url; 
                 enviarAGoogleSheets();
             } else {
-                console.log("La API no respondió con éxito, enviando como No adjunto");
                 datosParaEnviar.fileUrl = "No adjunto";
                 enviarAGoogleSheets();
             }
@@ -621,11 +613,10 @@
             enviarAGoogleSheets();
         });
     } else {
-        // Si el alumno realmente no subió nada
         datosParaEnviar.fileUrl = "No adjunto";
         enviarAGoogleSheets();
     }
-} // <-- REVISIÓN CLAVE: Esta llave cierra "validarYGuardarFormulario". Debe haber SOLO UNA aquí.
+}
 
         function renderizarTabla() {
             const tableBody = document.getElementById('dbTableBody');
