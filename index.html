@@ -42,7 +42,6 @@
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .badge-open { background-color: #b45309; color: #fef3c7; }
         .badge-close { background-color: #15803d; color: #dcfce7; }
-        .report-cell-item { margin-bottom: 4px; }
 
         /* CONTENEDOR MAPA */
         .map-iframe-wrapper { width: 100%; height: 650px; border: 2px solid #334155; border-radius: 8px; margin-top: 10px; background: #0f172a; }
@@ -378,6 +377,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
+        // PEGA TU ENLACE LARGO DE GOOGLE ACÁ ADENTRO:
+        const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbwqV5o9LzS5ZJ9N_REPLACE_THIS_WITH_YOUR_ACTUAL_URL/exec";
+
         let baseDeDatosReportes = [];
         let secuencialID = 1;
         let pantallaOrigenDB = 'screenHome';
@@ -404,78 +406,7 @@
 
             document.getElementById(idPantalla).style.display = 'block';
             window.scrollTo(0, 0);
-
-            if(idPantalla === 'screenMap') {
-                inicializarMapaNativo();
-            }
         }
-
-        function inicializarMapaNativo() {
-    // 1. Crear el mapa satelital base si no existía
-    if (mapaTacto === null) {
-        mapaTacto = L.map('map').setView([-36.6735, -64.3795], 13);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19, attribution: 'Tiles © Esri'
-        }).addTo(mapaTacto);
-        grupoMarcadores = L.layerGroup().addTo(mapaTacto);
-    }
-
-    // Limpiamos la pantalla por completo antes de dibujar
-    grupoMarcadores.clearLayers();
-
-    // FUNCIÓN INTERNA MEJORADA: Procesa las coordenadas de manera ultra segura
-    function dibujarPin(rep) {
-        if (!rep || !rep.latLon) return;
-        
-        let coordsStr = String(rep.latLon).trim();
-        if (!coordsStr.includes(',')) return; // Si no tiene coma, no es una coordenada válida
-        
-        const coords = coordsStr.split(',').map(num => parseFloat(num.trim()));
-        
-        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-            const contenidoPopup = `
-                <div style="color: #0f172a; font-family: sans-serif; font-size:13px; min-width: 200px;">
-                    <strong style="color:#009EDB;">${rep.id || '#'} - ${rep.title || 'Reporte'}</strong><br><br>
-                    <b>What:</b> ${rep.what || 'N/A'}<br>
-                    <b>Who:</b> ${rep.who || 'N/A'}<br>
-                    <b>Location:</b> ${rep.where || 'N/A'}<br>
-                    <b>Officer:</b> ${rep.author || 'N/A'}<br>
-                    <b>Status:</b> <span style="color:${rep.status === 'OPEN' ? '#b45309':'#15803d'}; font-weight:bold;">${rep.status || 'OPEN'}</span>
-                </div>
-            `;
-            L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(contenidoPopup);
-        }
-    }
-
-    // 2. DIBUJAR AL INSTANTE LOS PINES LOCALES (Garantiza visualización inmediata para el alumno)
-    if (Array.isArray(baseDeDatosReportes)) {
-        baseDeDatosReportes.forEach(rep => {
-            dibujarPin(rep);
-        });
-    }
-
-    // 3. TRAER EL HISTORIAL GENERAL DEL SHEETS SIN APAGAR LA PANTALLA SI FALLA
-    if (typeof urlGoogleSheets !== 'undefined' && urlGoogleSheets.trim() !== "") {
-        fetch(urlGoogleSheets)
-        .then(response => response.json())
-        .then(pinesDelSheet => {
-            if (Array.isArray(pinesDelSheet)) {
-                pinesDelSheet.forEach(repSheet => {
-                    const existe = baseDeDatosReportes.some(r => String(r.id) === String(repSheet.id));
-                    if (!existe) {
-                        baseDeDatosReportes.push(repSheet);
-                        dibujarPin(repSheet);
-                    }
-                });
-            }
-        })
-        .catch(error => {
-            console.warn("Modo local activo. No se pudo sincronizar el historial completo:", error);
-        });
-    }
-
-    setTimeout(() => { mapaTacto.invalidateSize(); }, 250);
-}
 
         function irABaseDatos(origen) {
             pantallaOrigenDB = origen;
@@ -485,12 +416,67 @@
         }
 
         function irAMapa(origen) {
-    pantallaOrigenMapa = origen;
-    document.getElementById('btnBackFromMap').onclick = function() { navegarA(pantallaOrigenMapa); };
-    navegarA('screenMap');
-    // Forzamos a que lea a Google Sheets e inicialice los pines inmediatamente
-    inicializarMapaNativo(); 
-}
+            pantallaOrigenMapa = origen;
+            document.getElementById('btnBackFromMap').onclick = function() { navegarA(pantallaOrigenMapa); };
+            navegarA('screenMap');
+            inicializarMapaNativo();
+        }
+
+        function inicializarMapaNativo() {
+            if (mapaTacto === null) {
+                mapaTacto = L.map('map').setView([-36.6735, -64.3795], 13);
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19, attribution: 'Tiles © Esri'
+                }).addTo(mapaTacto);
+                grupoMarcadores = L.layerGroup().addTo(mapaTacto);
+            }
+
+            grupoMarcadores.clearLayers();
+
+            function dibujarPin(rep) {
+                if (!rep || !rep.latLon) return;
+                let coordsStr = String(rep.latLon).trim();
+                if (!coordsStr.includes(',')) return;
+                
+                const coords = coordsStr.split(',').map(num => parseFloat(num.trim()));
+                if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                    const contenidoPopup = `
+                        <div style="color: #0f172a; font-family: sans-serif; font-size:13px; min-width: 200px;">
+                            <strong style="color:#009EDB;">${rep.id || '#'} - ${rep.title || 'Reporte'}</strong><br><br>
+                            <b>What:</b> ${rep.what || 'N/A'}<br>
+                            <b>Who:</b> ${rep.who || 'N/A'}<br>
+                            <b>Location:</b> ${rep.where || 'N/A'}<br>
+                            <b>Officer:</b> ${rep.author || 'N/A'}<br>
+                            <b>Status:</b> <span style="color:${rep.status === 'OPEN' ? '#b45309':'#15803d'}; font-weight:bold;">${rep.status || 'OPEN'}</span>
+                        </div>
+                    `;
+                    L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(contenidoPopup);
+                }
+            }
+
+            if (Array.isArray(baseDeDatosReportes)) {
+                baseDeDatosReportes.forEach(rep => { dibujarPin(rep); });
+            }
+
+            if (typeof urlGoogleSheets !== 'undefined' && urlGoogleSheets.trim() !== "" && !urlGoogleSheets.includes("REPLACE_THIS")) {
+                fetch(urlGoogleSheets)
+                .then(response => response.json())
+                .then(pinesDelSheet => {
+                    if (Array.isArray(pinesDelSheet)) {
+                        pinesDelSheet.forEach(repSheet => {
+                            const existe = baseDeDatosReportes.some(r => String(r.id) === String(repSheet.id));
+                            if (!existe) {
+                                baseDeDatosReportes.push(repSheet);
+                                dibujarPin(repSheet);
+                            }
+                        });
+                    }
+                })
+                .catch(error => { console.warn("Modo local activo:", error); });
+            }
+
+            setTimeout(() => { mapaTacto.invalidateSize(); }, 250);
+        }
 
         function controlarSubCategorias(tipo) {
             if(tipo === 'What') {
@@ -532,142 +518,89 @@
             }
         }
 
-        // MOTOR DE ENVÍO CORREGIDO PARA EVITAR RECHAZOS CORS
         function validarYGuardarFormulario(event) {
-    event.preventDefault();
-    const alertBox = document.getElementById('feedbackAlert');
-    alertBox.style.color = "white";
-    alertBox.style.backgroundColor = "#b45309";
-    alertBox.style.display = "block";
-    alertBox.innerHTML = "⏳ Transmitiendo reporte táctico y procesando archivos...";
+            event.preventDefault();
+            const alertBox = document.getElementById('feedbackAlert');
+            alertBox.style.color = "white";
+            alertBox.style.backgroundColor = "#b45309";
+            alertBox.style.display = "block";
+            alertBox.innerHTML = "⏳ Transmitiendo reporte táctico y procesando archivos...";
 
-    const coordenadasRaw = document.getElementById('mgrsInput').value;
+            const coordenadasRaw = document.getElementById('mgrsInput').value;
+            const mainWhat = document.getElementById('selectWhat').value;
+            let finalWhat = mainWhat;
+            if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
+            if(mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
 
-    const mainWhat = document.getElementById('selectWhat').value;
-    let finalWhat = mainWhat;
-    if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
-    if(mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
-
-    const mainWho = document.getElementById('selectWho').value;
-    let finalWho = mainWho;
-    if(mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` -> ${document.getElementById('subWhoPerpSelect').value}`;
-    if(mainWho === 'PARTICIPANTS') finalWho += ` -> ${document.getElementById('subWhoPartSelect').value}`;
-    if(mainWho === 'ORGANIZERS') {
-        const orgSub = document.getElementById('selectOrg').value;
-        finalWho += ` -> ${orgSub}`;
-        if(orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
-    }
-
-    const mainSector = document.getElementById('selectSector').value;
-    let finalSector = mainSector;
-    if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
-
-    const reporteID = `#${secuencialID++}`;
-
-    const datosParaEnviar = {
-        id: reporteID,
-        eventDate: `${document.getElementById('evDate').value} - ${document.getElementById('evTime').value}`,
-        categories: document.getElementById('inputForm').value,
-        title: document.getElementById('inputTitle').value,
-        what: finalWhat,
-        where: `${finalSector} (Toay: ${coordenadasRaw} - ${document.getElementById('inputLocName').value})`,
-        who: finalWho,
-        author: document.getElementById('inputOfficer').value,
-        sectorBase: mainSector,
-        submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
-        status: document.getElementById('inputStatus').value,
-        latLon: coordenadasRaw
-    };
-
-    const fileInput = document.getElementById('fileInput');
-
-    // Función interna encargada de enviar los datos finales por red
-    function enviarDatosCompletos(formularioFinal) {
-        fetch(urlGoogleSheets, {
-            method: "POST",
-            body: formularioFinal
-        })
-        .then(() => {
-            baseDeDatosReportes.push(datosParaEnviar);
-            alertBox.style.backgroundColor = "#16a34a";
-            alertBox.innerHTML = `✅ ¡Reporte ${reporteID} y adjunto procesados con éxito!`;
-            document.getElementById('sageForm').reset();
-            document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
-            setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 1500);
-        })
-        .catch((error) => {
-            console.error("Error en transmisión:", error);
-            baseDeDatosReportes.push(datosParaEnviar);
-            alertBox.style.backgroundColor = "#dc2626";
-            alertBox.innerHTML = "⚠️ Guardado localmente. Verifique permisos de Google.";
-            setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 2000);
-        });
-    }
-
-    // SI EL OPERADOR ADJUNTÓ UN ARCHIVO, SE PROCESA PRIMERO DE FORMA OBLIGATORIA
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            // Recién cuando el archivo terminó de leerse por completo, armamos el paquete FormData
-            const formBody = new FormData();
-            
-            // Metemos los textos ordinarios
-            for (const key in datosParaEnviar) {
-                formBody.append(key, datosParaEnviar[key]);
-            }
-            
-            // Adjuntamos las variables del archivo ya codificado
-            formBody.append("fileData", e.target.result);
-            formBody.append("fileName", `${reporteID}_${file.name}`);
-            formBody.append("fileType", file.type);
-            
-            // Se efectúa el despacho completo
-            enviarDatosCompletos(formBody);
-        };
-        
-        // Disparamos la lectura del archivo
-        reader.readAsDataURL(file);
-    } else {
-        // En caso excepcional de que no haya archivo (fallbacks), manda solo texto
-        const formBody = new FormData();
-        for (const key in datosParaEnviar) {
-            formBody.append(key, datosParaEnviar[key]);
-        }
-        enviarDatosCompletos(formBody);
-    }
-}
-
-            // Convertimos los datos a un formulario tradicional para saltear bloqueos CORS de Google
-            const formBody = new FormData();
-            for (const key in datosParaEnviar) {
-                formBody.append(key, datosParaEnviar[key]);
+            const mainWho = document.getElementById('selectWho').value;
+            let finalWho = mainWho;
+            if(mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` -> ${document.getElementById('subWhoPerpSelect').value}`;
+            if(mainWho === 'PARTICIPANTS') finalWho += ` -> ${document.getElementById('subWhoPartSelect').value}`;
+            if(mainWho === 'ORGANIZERS') {
+                const orgSub = document.getElementById('selectOrg').value;
+                finalWho += ` -> ${orgSub}`;
+                if(orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
             }
 
-            const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbwUl55LTb7K__Avcy9lgUTaInE_VP5kvom-VgVujnM8mHzeBAJcNMrPzHdRMI6LoVJd/exec";
+            const mainSector = document.getElementById('selectSector').value;
+            let finalSector = mainSector;
+            if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
 
-            // Se quita el modo "no-cors" y se transmite usando el formato FormData compatible
-            fetch(urlGoogleSheets, {
-                method: "POST",
-                body: formBody
-            })
-            .then(() => {
-                baseDeDatosReportes.push(datosParaEnviar);
-                alertBox.style.backgroundColor = "#16a34a";
-                alertBox.innerHTML = `✅ ¡Reporte ${reporteID} enviado con éxito!`;
-                document.getElementById('sageForm').reset();
-                document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
-                setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 1500);
-            })
-            .catch((error) => {
-                console.error("Error detectado:", error);
-                // Si falla por políticas de red, igual guardamos en la tabla local para no perder el ejercicio
-                baseDeDatosReportes.push(datosParaEnviar);
-                alertBox.style.backgroundColor = "#dc2626";
-                alertBox.innerHTML = "⚠️ Guardado localmente. Verifique permisos del script de Google.";
-                setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 2000);
-            });
+            const reporteID = `#${secuencialID++}`;
+
+            const datosParaEnviar = {
+                id: reporteID,
+                eventDate: `${document.getElementById('evDate').value} - ${document.getElementById('evTime').value}`,
+                categories: document.getElementById('inputForm').value,
+                title: document.getElementById('inputTitle').value,
+                what: finalWhat,
+                where: `${finalSector} (Toay: ${coordenadasRaw} - ${document.getElementById('inputLocName').value})`,
+                who: finalWho,
+                author: document.getElementById('inputOfficer').value,
+                sectorBase: mainSector,
+                submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
+                status: document.getElementById('inputStatus').value,
+                latLon: coordenadasRaw
+            };
+
+            const fileInput = document.getElementById('fileInput');
+
+            function enviarDatosCompletos(formularioFinal) {
+                fetch(urlGoogleSheets, { method: "POST", body: formularioFinal })
+                .then(() => {
+                    baseDeDatosReportes.push(datosParaEnviar);
+                    alertBox.style.backgroundColor = "#16a34a";
+                    alertBox.innerHTML = `✅ ¡Reporte ${reporteID} procesado con éxito!`;
+                    document.getElementById('sageForm').reset();
+                    document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
+                    setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 1500);
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    baseDeDatosReportes.push(datosParaEnviar);
+                    alertBox.style.backgroundColor = "#dc2626";
+                    alertBox.innerHTML = "⚠️ Guardado localmente.";
+                    setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 2000);
+                });
+            }
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const formBody = new FormData();
+                    for (const key in datosParaEnviar) { formBody.append(key, datosParaEnviar[key]); }
+                    formBody.append("fileData", e.target.result);
+                    formBody.append("fileName", `${reporteID}_${file.name}`);
+                    formBody.append("fileType", file.type);
+                    enviarDatosCompletos(formBody);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                const formBody = new FormData();
+                for (const key in datosParaEnviar) { formBody.append(key, datosParaEnviar[key]); }
+                enviarDatosCompletos(formBody);
+            }
         }
 
         function renderizarTabla() {
