@@ -534,50 +534,99 @@
 
         // MOTOR DE ENVÍO CORREGIDO PARA EVITAR RECHAZOS CORS
         function validarYGuardarFormulario(event) {
-            event.preventDefault();
-            const alertBox = document.getElementById('feedbackAlert');
-            alertBox.style.color = "white";
-            alertBox.style.backgroundColor = "#b45309";
-            alertBox.style.display = "block";
-            alertBox.innerHTML = "⏳ Transmitiendo reporte táctico a Google Sheets...";
+    event.preventDefault();
+    const alertBox = document.getElementById('feedbackAlert');
+    alertBox.style.color = "white";
+    alertBox.style.backgroundColor = "#b45309";
+    alertBox.style.display = "block";
+    alertBox.innerHTML = "⏳ Transmitiendo reporte táctico y archivos a Google...";
 
-            const coordenadasRaw = document.getElementById('mgrsInput').value;
+    const coordenadasRaw = document.getElementById('mgrsInput').value;
 
-            const mainWhat = document.getElementById('selectWhat').value;
-            let finalWhat = mainWhat;
-            if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
-            if(mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
+    const mainWhat = document.getElementById('selectWhat').value;
+    let finalWhat = mainWhat;
+    if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
+    if(mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
 
-            const mainWho = document.getElementById('selectWho').value;
-            let finalWho = mainWho;
-            if(mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` -> ${document.getElementById('subWhoPerpSelect').value}`;
-            if(mainWho === 'PARTICIPANTS') finalWho += ` -> ${document.getElementById('subWhoPartSelect').value}`;
-            if(mainWho === 'ORGANIZERS') {
-                const orgSub = document.getElementById('selectOrg').value;
-                finalWho += ` -> ${orgSub}`;
-                if(orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
-            }
+    const mainWho = document.getElementById('selectWho').value;
+    let finalWho = mainWho;
+    if(mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` -> ${document.getElementById('subWhoPerpSelect').value}`;
+    if(mainWho === 'PARTICIPANTS') finalWho += ` -> ${document.getElementById('subWhoPartSelect').value}`;
+    if(mainWho === 'ORGANIZERS') {
+        const orgSub = document.getElementById('selectOrg').value;
+        finalWho += ` -> ${orgSub}`;
+        if(orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
+    }
 
-            const mainSector = document.getElementById('selectSector').value;
-            let finalSector = mainSector;
-            if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
+    const mainSector = document.getElementById('selectSector').value;
+    let finalSector = mainSector;
+    if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
 
-            const reporteID = `#${secuencialID++}`;
+    const reporteID = `#${secuencialID++}`;
 
-            const datosParaEnviar = {
-                id: reporteID,
-                eventDate: `${document.getElementById('evDate').value} - ${document.getElementById('evTime').value}`,
-                categories: document.getElementById('inputForm').value,
-                title: document.getElementById('inputTitle').value,
-                what: finalWhat,
-                where: `${finalSector} (Toay: ${coordenadasRaw} - ${document.getElementById('inputLocName').value})`,
-                who: finalWho,
-                author: document.getElementById('inputOfficer').value,
-                sectorBase: mainSector,
-                submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
-                status: document.getElementById('inputStatus').value,
-                latLon: coordenadasRaw
-            };
+    const datosParaEnviar = {
+        id: reporteID,
+        eventDate: `${document.getElementById('evDate').value} - ${document.getElementById('evTime').value}`,
+        categories: document.getElementById('inputForm').value,
+        title: document.getElementById('inputTitle').value,
+        what: finalWhat,
+        where: `${finalSector} (Toay: ${coordenadasRaw} - ${document.getElementById('inputLocName').value})`,
+        who: finalWho,
+        author: document.getElementById('inputOfficer').value,
+        sectorBase: mainSector,
+        submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
+        status: document.getElementById('inputStatus').value,
+        latLon: coordenadasRaw
+    };
+
+    const fileInput = document.getElementById('fileInput');
+    
+    // Función interna para despachar los datos por red
+    function enviarDatosCompletos(formularioFinal) {
+        fetch(urlGoogleSheets, {
+            method: "POST",
+            body: formularioFinal
+        })
+        .then(() => {
+            baseDeDatosReportes.push(datosParaEnviar);
+            alertBox.style.backgroundColor = "#16a34a";
+            alertBox.innerHTML = `✅ ¡Reporte ${reporteID} y adjunto procesados con éxito!`;
+            document.getElementById('sageForm').reset();
+            document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
+            setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 1500);
+        })
+        .catch((error) => {
+            console.error("Error en transmisión:", error);
+            baseDeDatosReportes.push(datosParaEnviar);
+            alertBox.style.backgroundColor = "#dc2626";
+            alertBox.innerHTML = "⚠️ Guardado localmente. Verifique permisos de Google.";
+            setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 2000);
+        });
+    }
+
+    // Preparar el contenedor del formulario tradicional compatible con CORS
+    const formBody = new FormData();
+    for (const key in datosParaEnviar) {
+        formBody.append(key, datosParaEnviar[key]);
+    }
+
+    // SI EL OPERADOR SUBIÓ UN ARCHIVO, LO CONVERTIMOS A BASE64 ANTES DE ENVIAR
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            formBody.append("fileData", e.target.result);
+            formBody.append("fileName", `${reporteID}_${file.name}`);
+            formBody.append("fileType", file.type);
+            enviarDatosCompletos(formBody);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // Si no subió nada, se envía el reporte de texto normal
+        enviarDatosCompletos(formBody);
+    }
+}
 
             // Convertimos los datos a un formulario tradicional para saltear bloqueos CORS de Google
             const formBody = new FormData();
