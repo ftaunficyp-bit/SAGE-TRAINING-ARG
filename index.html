@@ -582,19 +582,17 @@
             } else {
                 datosParaEnviar.fileUrl = "No adjunto";
             }
-            enviarAGoogleSheets();
+            enviarFinal();
         })
         .catch((err) => {
             console.error("Error en la subida:", err);
             datosParaEnviar.fileUrl = "No adjunto";
-            enviarAGoogleSheets();
+            enviarFinal();
         });
     } else {
         datosParaEnviar.fileUrl = "No adjunto";
-        enviarAGoogleSheets();
+        enviarFinal();
     }
-
-    // ... Código anterior de validarYGuardarFormulario ...
 
     function enviarFinal() {
         const formBody = new FormData();
@@ -609,53 +607,22 @@
             alertBox.innerHTML = `✅ ¡Reporte ${reporteID} enviado!`;
             document.getElementById('sageForm').reset();
             document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
-            setTimeout(() => { alertBox.style.display = "none"; irABaseDatos('screenSageHub'); }, 1500);
+            setTimeout(() => { 
+                alertBox.style.display = "none"; 
+                irABaseDatos('screenSageHub'); 
+            }, 1500);
         })
         .catch((error) => {
             console.error("Error GSheets:", error);
             alertBox.style.backgroundColor = "#dc2626";
             alertBox.innerHTML = "⚠️ Error de conexión.";
         });
-    } // <-- ESTA LLAVE CIERRA "enviarFinal"
-} // <-- ESTA LLAVE CIERRA "validarYGuardarFormulario"
-
-// REVISA AQUÍ: Justo abajo de esto NO debería haber ninguna llave "}" suelta.
-// Deberían seguir otras funciones de tu SAGE Hub, o directamente el cierre de la etiqueta </script>
-
-    const fileInput = document.getElementById('fileInput');
-
-    if (fileInput && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const formDataCloud = new FormData();
-        formDataCloud.append('image', file);
-
-        fetch('https://api.imgbb.com/1/upload?key=62f831b0e358c5f49dfbd92bfbc0fb5e', {
-            method: 'POST',
-            body: formDataCloud
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success && result.data && result.data.url) {
-                datosParaEnviar.fileUrl = result.data.url;
-            } else {
-                datosParaEnviar.fileUrl = "No adjunto";
-            }
-            enviarAGoogleSheets();
-        })
-        .catch((err) => {
-            console.error("Error en la subida:", err);
-            datosParaEnviar.fileUrl = "No adjunto";
-            enviarAGoogleSheets();
-        });
-    } else {
-        datosParaEnviar.fileUrl = "No adjunto";
-        enviarAGoogleSheets();
     }
 }
 
-        function renderizarTabla() {
+function renderizarTabla() {
     const tableBody = document.getElementById('dbTableBody');
-    if (!tableBody) return; // Seguridad por si no encuentra el elemento
+    if (!tableBody) return;
     
     tableBody.innerHTML = "";
     
@@ -679,6 +646,6 @@
         `;
     }
 }
-    </script>
+</script>
 </body>
 </html>
