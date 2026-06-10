@@ -3,215 +3,845 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNITE AWARE - Training Platform</title>
-    
+    <title>UNITE AWARE — UNFICYP Training Platform</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js"></script>
     <style>
         /* ==========================================
-   HOJA DE ESTILO RENOVADA: SAGE COMMAND HUB
-   ========================================== */
+           UNITE AWARE — UN COMMAND THEME
+           Color palette inspired by UN blue identity
+           ========================================== */
 
-:root {
-  --bg-principal: #0f172a;       /* Slate 900: Fondo profundo y moderno */
-  --bg-tarjeta: #1e293b;         /* Slate 800: Tarjetas y contenedores */
-  --azul-tactico: #009edb;       /* Azul SAGE para elementos principales */
-  --azul-hover: #38bdf8;         /* Azul brillante para cuando pasas el mouse */
-  --verde-exito: #10b981;        /* Esmeralda para reportes enviados */
-  --texto-principal: #f8fafc;    /* Blanco sedoso para evitar fatiga */
-  --texto-secundario: #94a3b8;   /* Gris claro para descripciones secundarias */
-  --transicion-suave: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
+        :root {
+            /* UN Official Blue family */
+            --un-blue:          #009EDB;    /* Primary UN light blue */
+            --un-blue-deep:     #00558A;    /* Deep UN navy for headers */
+            --un-blue-dark:     #003F6B;    /* Darkest UN blue */
+            --un-blue-subtle:   #E8F6FC;    /* Lightest tint for backgrounds */
+            --un-blue-mid:      #B3DFF2;    /* Mid tint for borders/dividers */
 
-body {
-  margin: 0;
-  padding: 20px;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg-principal);
-  color: var(--texto-principal);
-  -webkit-font-smoothing: antialiased;
-}
+            /* Surface system — dark operational theme */
+            --surface-0:        #0B1220;    /* Deep background */
+            --surface-1:        #111C2E;    /* Card background */
+            --surface-2:        #172236;    /* Elevated card */
+            --surface-3:        #1E2D45;    /* Input / active state */
+            --surface-border:   #253653;    /* Default border */
+            --surface-border-hover: #2E4470; /* Border on hover */
 
-/* --- TARJETAS Y CONTENEDORES --- */
-.container, .screen, .card {
-  background-color: var(--bg-tarjeta);
-  border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-  transition: var(--transicion-suave);
-}
+            /* Semantic */
+            --status-open:      #F59E0B;    /* Amber for open */
+            --status-open-bg:   rgba(245,158,11,0.12);
+            --status-close:     #10B981;    /* Emerald for closed */
+            --status-close-bg:  rgba(16,185,129,0.12);
+            --danger:           #EF4444;
+            --danger-bg:        rgba(239,68,68,0.12);
+            --success:          #10B981;
+            --success-bg:       rgba(16,185,129,0.12);
 
-/* Efecto de elevación al pasar sobre los módulos principales del HOME */
-.card-modulo:hover {
-  transform: translateY(-4px);
-  border-color: var(--azul-tactico);
-  box-shadow: 0 12px 20px -3px rgba(0, 158, 219, 0.15);
-}
+            /* Typography */
+            --text-primary:     #EFF6FF;
+            --text-secondary:   #8FA8C8;
+            --text-muted:       #4E6888;
 
-/* --- BOTONES DE ACCIÓN --- */
-button, .btn {
-  background: var(--azul-tactico);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: var(--transicion-suave);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+            /* Motion */
+            --ease-out:         cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-sm:      150ms;
+            --duration-md:      250ms;
+        }
 
-/* Efecto al apoyar el mouse en botones */
-button:hover, .btn:hover {
-  background: var(--azul-hover);
-  transform: scale(1.02); /* Crece un 2% de forma sutil */
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-}
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
 
-/* Efecto de hundimiento físico al hacer clic */
-button:active, .btn:active {
-  transform: scale(0.98);
-}
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--surface-0);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
 
-/* --- INPUTS Y FORMULARIOS --- */
-input, select, textarea {
-  width: 100%;
-  padding: 12px;
-  background-color: #0f172a;
-  border: 1px solid #475569;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  box-sizing: border-box;
-  transition: var(--transicion-suave);
-}
+        /* ─── TOP MASTHEAD ──────────────────────────────────────── */
+        .masthead {
+            background: var(--un-blue-dark);
+            border-bottom: 3px solid var(--un-blue);
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 16px;
+        }
 
-/* Cuando el usuario hace clic adentro de una casilla para escribir */
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--azul-tactico);
-  box-shadow: 0 0 0 3px rgba(0, 158, 219, 0.25);
-  background-color: #111827;
-}
+        .masthead-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
 
-/* inputs bloqueados (como el de coordenadas automáticas) */
-input[readonly] {
-  background-color: #090d16 !important;
-  color: var(--texto-secundario);
-  border-color: #1e293b;
-  cursor: not-allowed;
-}
+        .un-emblem {
+            width: 40px;
+            height: 40px;
+            background: var(--un-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
 
-/* --- TABLAS DE BASE DE DATOS --- */
-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-top: 15px;
-}
+        .un-emblem svg {
+            width: 26px;
+            height: 26px;
+            fill: white;
+        }
 
-th {
-  background-color: #0f172a;
-  color: var(--azul-tactico);
-  font-weight: 600;
-  padding: 14px;
-  text-align: left;
-  border-bottom: 2px solid #334155;
-}
+        .masthead-title {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
 
-td {
-  padding: 14px;
-  border-bottom: 1px solid #1e293b;
-  color: var(--texto-principal);
-  transition: var(--transicion-suave);
-}
+        .masthead-title .app-name {
+            font-size: 17px;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 0.04em;
+        }
 
-/* Ilumina la fila completa de la tabla donde el usuario tiene apoyado el mouse */
-tr:hover td {
-  background-color: rgba(56, 189, 248, 0.05);
-}
+        .masthead-title .app-sub {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--un-blue-mid);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
 
-/* --- ALERTAS Y ANIMACIÓN DE CARGA (SPINNER) --- */
-#feedbackAlert {
-  border-radius: 8px;
-  padding: 16px;
-  font-weight: 500;
-  display: none;
-  animation: deslizarAlerta 0.3s ease-out;
-}
+        .masthead-badge {
+            background: rgba(0,158,219,0.15);
+            border: 1px solid rgba(0,158,219,0.35);
+            color: var(--un-blue);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
 
-/* El círculo giratorio de carga */
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255,255,255,0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: girar 0.8s linear infinite;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 10px;
-}
+        /* ─── MAIN CONTAINER ──────────────────────────────────────── */
+        #mainContainer {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
 
-/* Keyframes de Animaciones */
-@keyframes girar {
-  to { transform: rotate(360deg); }
-}
+        #mainContainer.wide-container {
+            max-width: 1200px;
+        }
 
-@keyframes deslizarAlerta {
-  from { transform: translateY(-10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+        #mainContainer.map-container {
+            max-width: 100%;
+            padding: 0;
+        }
+
+        /* ─── BREADCRUMB ──────────────────────────────────────────── */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .breadcrumb span { color: var(--text-secondary); }
+        .breadcrumb .sep { color: var(--text-muted); }
+
+        /* ─── SECTION HEADER ──────────────────────────────────────── */
+        .section-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .section-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(0,158,219,0.12);
+            border: 1px solid rgba(0,158,219,0.25);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .section-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--un-blue);
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+
+        .section-header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ─── MODULE CARDS (HOME) ──────────────────────────────────── */
+        .module-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .module-card {
+            background: var(--surface-1);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: default;
+            transition: border-color var(--duration-md) var(--ease-out),
+                        transform var(--duration-md) var(--ease-out),
+                        box-shadow var(--duration-md) var(--ease-out),
+                        background var(--duration-md) var(--ease-out);
+        }
+
+        .module-card:hover {
+            border-color: var(--un-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(0,158,219,0.12);
+            background: var(--surface-2);
+        }
+
+        .module-card-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--un-blue);
+            margin-bottom: 6px;
+        }
+
+        .module-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 8px;
+        }
+
+        .module-card p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0 0 18px;
+            line-height: 1.5;
+        }
+
+        .module-card-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ─── BUTTONS ──────────────────────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 9px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background var(--duration-sm) var(--ease-out),
+                        transform var(--duration-sm) var(--ease-out),
+                        box-shadow var(--duration-sm) var(--ease-out);
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        /* Primary — UN Blue */
+        .btn-primary {
+            background: var(--un-blue);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #00B4F7;
+            box-shadow: 0 4px 16px rgba(0,158,219,0.35);
+        }
+
+        /* Secondary — ghost with border */
+        .btn-secondary {
+            background: transparent;
+            color: var(--un-blue);
+            border: 1px solid rgba(0,158,219,0.4);
+        }
+        .btn-secondary:hover {
+            background: rgba(0,158,219,0.1);
+            border-color: var(--un-blue);
+        }
+
+        /* Success — submit */
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #10B981;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.35);
+        }
+
+        /* Danger */
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Back button */
+        .btn-back {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--surface-border);
+            font-size: 12px;
+            padding: 7px 14px;
+            margin-bottom: 24px;
+        }
+        .btn-back:hover {
+            color: var(--text-primary);
+            border-color: var(--surface-border-hover);
+            background: var(--surface-2);
+        }
+
+        /* ─── SAGE HUB MENU ──────────────────────────────────────── */
+        .sage-menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .sage-menu-card {
+            background: var(--surface-1);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--duration-md) var(--ease-out);
+        }
+
+        .sage-menu-card:hover {
+            border-color: var(--un-blue);
+            background: var(--surface-2);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,158,219,0.1);
+        }
+
+        .sage-menu-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0,158,219,0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            transition: background var(--duration-md);
+        }
+
+        .sage-menu-card:hover .sage-menu-icon {
+            background: rgba(0,158,219,0.2);
+        }
+
+        .sage-menu-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--un-blue);
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .sage-menu-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+
+        .sage-menu-card p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ─── FORM LAYOUT ─────────────────────────────────────────── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-secondary);
+        }
+
+        label.required::after {
+            content: ' *';
+            color: var(--un-blue);
+        }
+
+        input, select, textarea {
+            background: var(--surface-3);
+            border: 1px solid var(--surface-border);
+            border-radius: 7px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            padding: 10px 12px;
+            transition: border-color var(--duration-sm), box-shadow var(--duration-sm), background var(--duration-sm);
+            width: 100%;
+            box-sizing: border-box;
+            appearance: auto;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--un-blue);
+            box-shadow: 0 0 0 3px rgba(0,158,219,0.2);
+            background: var(--surface-2);
+        }
+
+        input:hover:not(:focus):not([readonly]), 
+        select:hover:not(:focus),
+        textarea:hover:not(:focus) {
+            border-color: var(--surface-border-hover);
+        }
+
+        input[readonly] {
+            background: var(--surface-1) !important;
+            color: var(--text-muted) !important;
+            border-color: var(--surface-border) !important;
+            cursor: not-allowed;
+        }
+
+        select option {
+            background: var(--surface-3);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        /* ─── FORM CARD WRAPPER ───────────────────────────────────── */
+        .form-card {
+            background: var(--surface-1);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            padding: 28px;
+        }
+
+        .form-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--un-blue);
+            border-bottom: 1px solid var(--surface-border);
+            padding-bottom: 10px;
+            margin: 24px 0 16px;
+            grid-column: 1 / -1;
+        }
+
+        /* ─── SUB-GROUPS ──────────────────────────────────────────── */
+        .sub-group {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            background: var(--surface-0);
+            border-left: 2px solid var(--un-blue);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .sub-group label {
+            color: var(--text-muted);
+        }
+
+        /* ─── FEEDBACK ALERT ──────────────────────────────────────── */
+        #feedbackAlert {
+            display: none;
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 20px;
+            animation: slideDown 0.25s var(--ease-out);
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-8px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── DATABASE TABLE ──────────────────────────────────────── */
+        .db-wrapper {
+            background: var(--surface-1);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .db-toolbar {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--surface-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .db-toolbar span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--surface-0);
+            color: var(--un-blue);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--surface-border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 13px 16px;
+            font-size: 12px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--surface-border);
+            vertical-align: top;
+            line-height: 1.5;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        tbody tr {
+            transition: background var(--duration-sm);
+        }
+
+        tbody tr:hover td {
+            background: rgba(0,158,219,0.05);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+
+        .badge-open {
+            background: var(--status-open-bg);
+            color: var(--status-open);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        .badge-close {
+            background: var(--status-close-bg);
+            color: var(--status-close);
+            border: 1px solid rgba(16,185,129,0.25);
+        }
+
+        .badge-id {
+            background: rgba(0,158,219,0.1);
+            color: var(--un-blue);
+            border: 1px solid rgba(0,158,219,0.2);
+            font-size: 11px;
+        }
+
+        td strong {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* ─── MAP ─────────────────────────────────────────────────── */
+        #map {
+            height: calc(100vh - 67px);
+            width: 100%;
+        }
+
+        .map-top-bar {
+            background: var(--surface-1);
+            border-bottom: 1px solid var(--surface-border);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ─── FILE INPUT ──────────────────────────────────────────── */
+        input[type="file"] {
+            cursor: pointer;
+            padding: 8px 12px;
+        }
+
+        /* ─── FORM SUBMIT AREA ────────────────────────────────────── */
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--surface-border);
+            margin-top: 8px;
+        }
+
+        /* ─── EMPTY STATE ─────────────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state svg {
+            width: 40px;
+            height: 40px;
+            stroke: var(--text-muted);
+            fill: none;
+            stroke-width: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p { margin: 4px 0 0; font-size: 13px; }
+
+        /* ─── RESPONSIVE ──────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .module-grid { grid-template-columns: 1fr; }
+            .sage-menu-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full-width { grid-column: auto; }
+            #mainContainer { padding: 16px; }
+        }
     </style>
-<script src="https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js"></script>
 </head>
 <body>
 
-    <div id="mainContainer" class="container">
+<!-- ── MASTHEAD ──────────────────────────────────────────────────── -->
+<header class="masthead">
+    <div class="masthead-brand">
+        <div class="un-emblem">
+            <!-- UN emblem simplified -->
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="16" r="14" fill="none" stroke="white" stroke-width="1.5"/>
+                <!-- Globe meridians simplified -->
+                <ellipse cx="16" cy="16" rx="5" ry="14" fill="none" stroke="white" stroke-width="1.2"/>
+                <line x1="2" y1="16" x2="30" y2="16" stroke="white" stroke-width="1.2"/>
+                <path d="M4 10 Q16 13 28 10" fill="none" stroke="white" stroke-width="1.2"/>
+                <path d="M4 22 Q16 19 28 22" fill="none" stroke="white" stroke-width="1.2"/>
+                <!-- Olive branches bottom -->
+                <path d="M10 28 Q8 24 11 22 M22 28 Q24 24 21 22" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <div class="masthead-title">
+            <span class="app-name">UNITE AWARE</span>
+            <span class="app-sub">UNFICYP · Operational Awareness Platform</span>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="masthead-badge">Training Mode</div>
+        <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#10B981;display:inline-block;"></span>
+            System online
+        </div>
+    </div>
+</header>
 
-        <div id="screenHome">
-            <h2 class="home-title">Módulo Principal (HOME)</h2>
-            <div class="home-grid">
-                <div class="home-section">
-                    <h3>1. INPUT INFORMATION</h3>
-                    <button type="button" class="btn btn-secondary" onclick="alert('Módulo Patrol Plans en mantenimiento.')">Patrol Plans</button>
-                    <button type="button" class="btn" onclick="navegarA('screenSageHub')">Sage</button>
-                </div>
-                <div class="home-section">
-                    <h3>2. VISUALIZE AND ANALYSE INFO</h3>
-                    <button type="button" class="btn btn-secondary" onclick="irAMapa('screenHome')">Maps</button>
-                    <button type="button" class="btn btn-secondary" onclick="irABaseDatos('screenHome')">Sage Search</button>
-                </div>
+<div id="mainContainer">
+
+    <!-- ══ SCREEN: HOME ════════════════════════════════════════════ -->
+    <div id="screenHome">
+        <div class="section-header">
+            <div class="section-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+            </div>
+            <div>
+                <h2>Mission Control</h2>
+                <p>Select a module to begin your operational workflow</p>
             </div>
         </div>
 
-        <div id="screenSageHub" style="display: none;">
-            <button type="button" class="btn btn-back" onclick="navegarA('screenHome')">← Volver al Home</button>
-            <h2 class="home-title">Módulo SAGE</h2>
-            <div class="sage-menu">
-                <button type="button" class="btn btn-secondary" onclick="irABaseDatos('screenSageHub')">Search Events</button>
-                <button type="button" class="btn btn-secondary" onclick="irAMapa('screenSageHub')">Map View</button>
-                <button type="button" class="btn" onclick="navegarA('screenSubmitEvent')">Submit Event</button>
+        <div class="module-grid">
+            <div class="module-card">
+                <div class="module-card-label">Module 1</div>
+                <h3>Input Information</h3>
+                <p>Submit field reports, patrol plans, and incident data to the SAGE database.</p>
+                <div class="module-card-actions">
+                    <button class="btn btn-secondary" onclick="alert('Módulo Patrol Plans en mantenimiento.')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                        Patrol Plans
+                    </button>
+                    <button class="btn btn-primary" onclick="navegarA('screenSageHub')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+                        SAGE
+                    </button>
+                </div>
+            </div>
+
+            <div class="module-card">
+                <div class="module-card-label">Module 2</div>
+                <h3>Visualize &amp; Analyse</h3>
+                <p>Access the tactical map and search historical event data from the SAGE database.</p>
+                <div class="module-card-actions">
+                    <button class="btn btn-secondary" onclick="irAMapa('screenHome')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                        Maps
+                    </button>
+                    <button class="btn btn-secondary" onclick="irABaseDatos('screenHome')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                        SAGE Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ SCREEN: SAGE HUB ════════════════════════════════════════ -->
+    <div id="screenSageHub" style="display:none;">
+        <button class="btn btn-back" onclick="navegarA('screenHome')">← Back to Home</button>
+        <div class="section-header">
+            <div class="section-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+            </div>
+            <div>
+                <h2>SAGE Module</h2>
+                <p>Situational Awareness &amp; Ground-truth Events — operational event management</p>
             </div>
         </div>
 
-        <div id="screenSubmitEvent" style="display: none;">
-            <button type="button" class="btn btn-back" onclick="navegarA('screenSageHub')">← Volver a Sage</button>
-            <h2 class="home-title" style="margin-bottom: 20px;">Submit Event Form</h2>
-            
-            <form id="sageForm" onsubmit="validarYGuardarFormulario(event)">
+        <div class="sage-menu-grid">
+            <div class="sage-menu-card" onclick="irABaseDatos('screenSageHub')">
+                <div class="sage-menu-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <h4>Search Events</h4>
+                <p>Query the SAGE database</p>
+            </div>
+
+            <div class="sage-menu-card" onclick="irAMapa('screenSageHub')">
+                <div class="sage-menu-icon">
+                    <svg viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                </div>
+                <h4>Map View</h4>
+                <p>Tactical event map</p>
+            </div>
+
+            <div class="sage-menu-card" onclick="navegarA('screenSubmitEvent')">
+                <div class="sage-menu-icon" style="background: rgba(16,185,129,0.1);">
+                    <svg viewBox="0 0 24 24" style="stroke: #10B981;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+                <h4>Submit Event</h4>
+                <p>File a new SAGE report</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ SCREEN: SUBMIT EVENT ════════════════════════════════════ -->
+    <div id="screenSubmitEvent" style="display:none;">
+        <button class="btn btn-back" onclick="navegarA('screenSageHub')">← Back to SAGE</button>
+        <div class="section-header">
+            <div class="section-icon" style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.25);">
+                <svg viewBox="0 0 24 24" style="stroke: #10B981;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            </div>
+            <div>
+                <h2>Submit Event Report</h2>
+                <p>Complete all required fields — marked with an asterisk</p>
+            </div>
+        </div>
+
+        <form id="sageForm" onsubmit="validarYGuardarFormulario(event)">
+            <div class="form-card">
                 <div class="form-grid">
-                    
+
+                    <!-- CLASSIFICATION -->
+                    <div class="form-section-title">Classification</div>
+
                     <div class="form-group full-width">
-                        <label class="required">1. FORM</label>
+                        <label class="required">1. Form type</label>
                         <select id="inputForm" required onchange="actualizarTitulo()">
-                            <option value="">Seleccione tipo...</option>
+                            <option value="">Select type...</option>
                             <option value="Incident: civilian incidents">Incident: civilian incidents</option>
                             <option value="Incident: criminal incidents">Incident: criminal incidents</option>
                             <option value="Incident: military violations">Incident: military violations</option>
@@ -219,17 +849,17 @@ tr:hover td {
                             <option value="Activity: civil affairs tasks">Activity: civil affairs tasks</option>
                             <option value="Activity: Military information">Activity: Military information</option>
                             <option value="Activity: police tasks">Activity: police tasks</option>
-                            <option value="Activity: trust buildings/intercomunal/outreach events">Activity: trust buildings/intercomunal/outreach events</option>
+                            <option value="Activity: trust buildings/intercomunal/outreach events">Activity: trust buildings / outreach events</option>
                         </select>
                     </div>
 
                     <div class="form-group full-width">
-                        <label class="required">2. TITLE (Autogenerado)</label>
-                        <input type="text" id="inputTitle" readonly required placeholder="Se completará automáticamente...">
+                        <label class="required">2. Title (auto-generated)</label>
+                        <input type="text" id="inputTitle" readonly required placeholder="Will be filled automatically...">
                     </div>
 
                     <div class="form-group">
-                        <label>3. SEVERITY LEVEL</label>
+                        <label>3. Severity level</label>
                         <select id="inputSeverity">
                             <option value="N/A">N/A</option>
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
@@ -237,42 +867,47 @@ tr:hover td {
                     </div>
 
                     <div class="form-group">
-                        <label>4. CREDIBILITY LEVEL</label>
+                        <label>4. Credibility level</label>
                         <select id="inputCredibility">
                             <option value="N/A">N/A</option>
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
                         </select>
                     </div>
 
+                    <!-- TIMING -->
+                    <div class="form-section-title">Event &amp; Report Timing</div>
+
                     <div class="form-group">
-                        <label class="required">5. EVENT DATE</label>
+                        <label class="required">5. Event date</label>
                         <input type="date" required id="evDate">
                     </div>
                     <div class="form-group">
-                        <label class="required">6. TIME OF EVENT (24hs)</label>
+                        <label class="required">6. Time of event (24h)</label>
                         <input type="time" required id="evTime">
                     </div>
-
                     <div class="form-group">
-                        <label class="required">7. REPORT DATE</label>
+                        <label class="required">7. Report date</label>
                         <input type="date" required id="repDate">
                     </div>
                     <div class="form-group">
-                        <label class="required">8. TIME OF REPORT (24hs)</label>
+                        <label class="required">8. Time of report (24h)</label>
                         <input type="time" required id="repTime">
                     </div>
 
+                    <!-- WHAT / WHO / WHERE -->
+                    <div class="form-section-title">Event Details</div>
+
                     <div class="form-group full-width">
-                        <label class="required">9. WHAT</label>
+                        <label class="required">9. What</label>
                         <select id="selectWhat" required onchange="controlarSubCategorias('What')">
-                            <option value="">Seleccione grupo...</option>
+                            <option value="">Select category...</option>
                             <option value="CIVILIAN INCIDENTS">CIVILIAN INCIDENTS</option>
                             <option value="DEMONSTRATION">DEMONSTRATION</option>
                             <option value="FIRE">FIRE</option>
                             <option value="INCURSION">INCURSION</option>
                         </select>
                         <div id="subWhatCivilian" class="sub-group">
-                            <label class="required">Subcategoría Civilian Incidents</label>
+                            <label class="required">Subcategory — Civilian Incidents</label>
                             <select id="subWhatCivilianSelect">
                                 <option value="CONSTRUCTION">CONSTRUCTION</option>
                                 <option value="CROSSING THE MSL BY CIVILIANS">CROSSING THE MSL BY CIVILIANS</option>
@@ -280,7 +915,7 @@ tr:hover td {
                             </select>
                         </div>
                         <div id="subWhatIncursion" class="sub-group">
-                            <label class="required">Subcategoría Incursion</label>
+                            <label class="required">Subcategory — Incursion</label>
                             <select id="subWhatIncursionSelect">
                                 <option value="DOG TRAINING">DOG TRAINING</option>
                                 <option value="FARMING/GRAZING">FARMING/GRAZING</option>
@@ -296,15 +931,15 @@ tr:hover td {
                     </div>
 
                     <div class="form-group full-width">
-                        <label class="required">10. WHO</label>
+                        <label class="required">10. Who</label>
                         <select id="selectWho" required onchange="controlarSubCategorias('Who')">
-                            <option value="">Seleccione rol...</option>
-                            <option value="PERPETRATORS/ACTORS/OFFENDERS">PERPETRATORS/ACTORS/OFFENDERS</option>
+                            <option value="">Select role...</option>
+                            <option value="PERPETRATORS/ACTORS/OFFENDERS">PERPETRATORS / ACTORS / OFFENDERS</option>
                             <option value="PARTICIPANTS">PARTICIPANTS</option>
                             <option value="ORGANIZERS">ORGANIZERS</option>
                         </select>
                         <div id="subWhoPerp" class="sub-group">
-                            <label class="required">Subcategoría Perpetrators</label>
+                            <label class="required">Subcategory — Perpetrators</label>
                             <select id="subWhoPerpSelect">
                                 <option value="CIVILIAN GREEK CYPRIOT">CIVILIAN GREEK CYPRIOT</option>
                                 <option value="CIVILIAN TURKISH CYPRIOT">CIVILIAN TURKISH CYPRIOT</option>
@@ -323,13 +958,13 @@ tr:hover td {
                             </select>
                         </div>
                         <div id="subWhoPart" class="sub-group">
-                            <label class="required">Subcategoría Participants</label>
+                            <label class="required">Subcategory — Participants</label>
                             <select id="subWhoPartSelect">
                                 <option value="ARMENIANS">ARMENIANS</option>
                                 <option value="GREEK CYPRIOTS">GREEK CYPRIOTS</option>
                                 <option value="LATINS">LATINS</option>
                                 <option value="MARONITES">MARONITES</option>
-                                <option value="NGO/CIVIL SOCIETY ORGANIZATIONS">NGO/CIVIL SOCIETY ORGANIZATIONS</option>
+                                <option value="NGO/CIVIL SOCIETY ORGANIZATIONS">NGO / CIVIL SOCIETY ORGANIZATIONS</option>
                                 <option value="POLITICAL PARTIES">POLITICAL PARTIES</option>
                                 <option value="REPUBLIC OF CYPRUS GOVERNMENT">REPUBLIC OF CYPRUS GOVERNMENT</option>
                                 <option value="3RD COUNTRY NATIONALS">3RD COUNTRY NATIONALS</option>
@@ -341,7 +976,7 @@ tr:hover td {
                             </select>
                         </div>
                         <div id="subWhoOrg" class="sub-group">
-                            <label class="required">Subcategoría Organizers</label>
+                            <label class="required">Subcategory — Organizers</label>
                             <select id="selectOrg" onchange="controlarSubCategorias('Unficyp')">
                                 <option value="GREEK CYPRIOT COMMUNITY">GREEK CYPRIOT COMMUNITY</option>
                                 <option value="INTERCOMUNAL">INTERCOMUNAL</option>
@@ -349,7 +984,7 @@ tr:hover td {
                                 <option value="UNFICYP">UNFICYP</option>
                             </select>
                             <div id="subWhoUnficyp" class="sub-group" style="margin-top:10px;">
-                                <label class="required">Rama UNFICYP</label>
+                                <label class="required">UNFICYP branch</label>
                                 <select id="subWhoUnficypSelect">
                                     <option value="CIVIL AFFAIRS">CIVIL AFFAIRS</option>
                                     <option value="GENDER AFFAIRS OFFICE">GENDER AFFAIRS OFFICE</option>
@@ -358,7 +993,7 @@ tr:hover td {
                                     <option value="PIO">PIO</option>
                                     <option value="UNMAS">UNMAS</option>
                                     <option value="UNPOL">UNPOL</option>
-                                    <option value="SECURITY SECTION/UNDSS">SECURITY SECTION/UNDSS</option>
+                                    <option value="SECURITY SECTION/UNDSS">SECURITY SECTION / UNDSS</option>
                                     <option value="OTHER">OTHER</option>
                                 </select>
                             </div>
@@ -366,16 +1001,16 @@ tr:hover td {
                     </div>
 
                     <div class="form-group full-width">
-                        <label class="required">11. WHERE (Sectors)</label>
+                        <label class="required">11. Where (sector)</label>
                         <select id="selectSector" required onchange="controlarSubCategorias('Sector')">
-                            <option value="">Seleccione Sector...</option>
+                            <option value="">Select sector...</option>
                             <option value="UNPA">UNPA</option>
                             <option value="SECTOR 2">SECTOR 2</option>
                             <option value="SECTOR 4">SECTOR 4</option>
                             <option value="SECTOR 1">SECTOR 1</option>
                         </select>
                         <div id="subSector1" class="sub-group">
-                            <label class="required">Establecimiento Sector 1</label>
+                            <label class="required">Establishment — Sector 1</label>
                             <select id="subSector1Select">
                                 <option value="CAMP ROCA">CAMP ROCA</option>
                                 <option value="CAMP SAN MARTIN">CAMP SAN MARTIN</option>
@@ -386,8 +1021,11 @@ tr:hover td {
                         </div>
                     </div>
 
+                    <!-- CONTEXT -->
+                    <div class="form-section-title">Context &amp; Assessment</div>
+
                     <div class="form-group">
-                        <label>12. ATMOSPHERE</label>
+                        <label>12. Atmosphere</label>
                         <select id="inputAtmosphere">
                             <option value="N/A">N/A</option>
                             <option value="TENSE">TENSE</option>
@@ -396,16 +1034,16 @@ tr:hover td {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>13. TENSIONS</label>
+                        <label>13. Tensions</label>
                         <select id="inputTensions">
                             <option value="N/A">N/A</option>
-                            <option value="CIVILIAN VAV OPFOR">CIVILIAN VAV OPFOR</option>
-                            <option value="CIVILIAN VAV CIVILIAN">CIVILIAN VAV CIVILIAN</option>
-                            <option value="CIVILIAN VAV UNFICYP">CIVILIAN VAV UNFICYP</option>
+                            <option value="CIVILIAN VAV OPFOR">CIVILIAN vs OPFOR</option>
+                            <option value="CIVILIAN VAV CIVILIAN">CIVILIAN vs CIVILIAN</option>
+                            <option value="CIVILIAN VAV UNFICYP">CIVILIAN vs UNFICYP</option>
                         </select>
                     </div>
                     <div class="form-group full-width">
-                        <label>14. FOCUS</label>
+                        <label>14. Focus</label>
                         <select id="inputFocus">
                             <option value="PROSOLUTION">PROSOLUTION</option>
                             <option value="ANTI-SOLUTION">ANTI-SOLUTION</option>
@@ -415,391 +1053,417 @@ tr:hover td {
                         </select>
                     </div>
 
+                    <!-- REPORTING OFFICER -->
+                    <div class="form-section-title">Reporting Officer</div>
+
                     <div class="form-group">
-                        <label>15. PERPETRATOR NAME</label>
-                        <input type="text" id="inputPerpName" placeholder="Nombre (si aplica)">
+                        <label>15. Perpetrator name</label>
+                        <input type="text" id="inputPerpName" placeholder="Name (if applicable)">
                     </div>
                     <div class="form-group">
-                        <label class="required">16. REPORTING OFFICER NAME AND RANK</label>
-                        <input type="text" id="inputOfficer" required placeholder="Ej: Teniente Primero Perez">
+                        <label class="required">16. Reporting officer — name &amp; rank</label>
+                        <input type="text" id="inputOfficer" required placeholder="e.g. Teniente Primero Perez">
                     </div>
 
                     <div class="form-group">
-                        <label class="required">17. STATUS OF EVENT</label>
+                        <label class="required">17. Status of event</label>
                         <select id="inputStatus" required>
                             <option value="OPEN">OPEN</option>
                             <option value="CLOSE">CLOSE</option>
                         </select>
                     </div>
 
+                    <!-- LOCATION -->
+                    <div class="form-section-title">Location</div>
+
                     <div class="form-group">
-    <label for="mgrsInput">MGRS Coordinates:</label>
-    <input type="text" id="mgrsInput" placeholder="Ej: 36SVD42318152" oninput="convertirMGRSaDecimal()" required />
-</div>
+                        <label class="required">18a. MGRS coordinates</label>
+                        <input type="text" id="mgrsInput" placeholder="e.g. 36SVD42318152" oninput="convertirMGRSaDecimal()" required>
+                    </div>
 
-<div class="form-group">
-    <label for="decimalInput">Google Decimal Coordinates (Auto):</label>
-    <input type="text" id="decimalInput" style="background-color: #1e293b; color: #94a3b8; cursor: not-allowed;" readonly />
-</div>
-
-                    <div class="form-group full-width">
-                        <label class="required">19. LOCATION NAME</label>
-                        <input type="text" id="inputLocName" required placeholder="Nombre geográfico de la localización">
+                    <div class="form-group">
+                        <label>18b. Decimal coordinates (auto)</label>
+                        <input type="text" id="decimalInput" readonly placeholder="Auto-converted from MGRS">
                     </div>
 
                     <div class="form-group full-width">
-                        <label class="required">20. UPLOAD PHOTO/PDF (Máx. 5MB)</label>
-                        <input type="file" id="fileInput" accept="image/*">
+                        <label class="required">19. Location name</label>
+                        <input type="text" id="inputLocName" required placeholder="Geographic name of location">
+                    </div>
+
+                    <!-- ATTACHMENTS & DESCRIPTION -->
+                    <div class="form-section-title">Narrative &amp; Attachments</div>
+
+                    <div class="form-group full-width">
+                        <label class="required">Incident description</label>
+                        <textarea id="incidentDesc" required rows="4" placeholder="Describe the incident briefly and factually..." oninput="actualizarTitulo()"></textarea>
                     </div>
 
                     <div class="form-group full-width">
-                        <label class="required">INCIDENT DESCRIPTION</label>
-                        <textarea id="incidentDesc" required rows="3" placeholder="Escriba brevemente los hechos..." oninput="actualizarTitulo()"></textarea>
+                        <label>20. Attach photo or PDF (max 5 MB)</label>
+                        <input type="file" id="fileInput" accept="image/*,.pdf">
+                    </div>
+
+                    <!-- ACTIONS -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            Submit training report
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('sageForm').reset(); document.querySelectorAll('.sub-group').forEach(sg => sg.style.display='none');">
+                            Reset form
+                        </button>
                     </div>
 
                 </div>
+            </div>
+        </form>
 
-                <button type="submit" class="btn" style="background-color: #16a34a; margin-top: 30px;">Enviar Reporte de Entrenamiento</button>
-            </form>
+        <div id="feedbackAlert"></div>
+    </div>
 
-            <div id="feedbackAlert" class="alert"></div>
+    <!-- ══ SCREEN: DATABASE ════════════════════════════════════════ -->
+    <div id="screenDatabase" style="display:none;">
+        <button id="btnBackFromDB" class="btn btn-back">← Back</button>
+        <div class="section-header">
+            <div class="section-icon">
+                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <div>
+                <h2>SAGE Search</h2>
+                <p>All submitted reports — most recent first</p>
+            </div>
         </div>
 
-        <div id="screenDatabase" style="display: none;">
-            <button type="button" id="btnBackFromDB" class="btn btn-back">← Volver</button>
-            <h2 class="home-title">SAGE Search - Base de Datos de Reportes</h2>
-            
-            <div class="db-table-wrapper">
+        <div class="db-wrapper">
+            <div class="db-toolbar">
+                <span id="dbCount">— reports loaded</span>
+                <button class="btn btn-secondary" style="font-size:12px; padding: 7px 14px;" onclick="renderizarTabla()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                    Refresh
+                </button>
+            </div>
+            <div class="table-scroll">
                 <table id="reportsTable">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Event Date</th>
-                            <th>Report Extracted Data</th>
+                            <th>Event date</th>
+                            <th>Title</th>
+                            <th>Details</th>
                             <th>Author</th>
                             <th>Status</th>
+                            <th>Attachment</th>
                         </tr>
                     </thead>
                     <tbody id="dbTableBody"></tbody>
                 </table>
             </div>
         </div>
-
-        <div id="screenMap" style="display: none;">
-            <button type="button" id="btnBackFromMap" class="btn btn-back">← Volver</button>
-            <h2 class="home-title">Live Tactical Map</h2>
-            <div id="map" class="map-iframe-wrapper"></div>
-        </div>
-
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- ══ SCREEN: MAP ════════════════════════════════════════════ -->
+    <div id="screenMap" style="display:none; padding: 0;">
+    </div>
 
-    <script>
-        // PEGA TU ENLACE LARGO DE GOOGLE ACÁ ADENTRO:
-        const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbwYD9dYDrpW9aLO4z7FsmJtqGZ2FsZICkZIJJR1ycCxuWuCSr_OI-RPxvprIt_LOX4R/exec";
+</div><!-- end #mainContainer -->
 
-        let baseDeDatosReportes = [];
-        let secuencialID = 1;
-        let pantallaOrigenDB = 'screenHome';
-        let pantallaOrigenMapa = 'screenHome';
-        let mapaTacto = null;
-        let grupoMarcadores = null;
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbwYD9dYDrpW9aLO4z7FsmJtqGZ2FsZICkZIJJR1ycCxuWuCSr_OI-RPxvprIt_LOX4R/exec";
 
-        function navegarA(idPantalla) {
-            const container = document.getElementById('mainContainer');
-            
-            if (idPantalla === 'screenDatabase') {
-                container.className = "container wide-container";
-            } else if (idPantalla === 'screenMap') {
-                container.className = "map-container";
-            } else {
-                container.className = "container";
-            }
+    let baseDeDatosReportes = [];
+    let secuencialID = 1;
+    let pantallaOrigenDB = 'screenHome';
+    let pantallaOrigenMapa = 'screenHome';
+    let mapaTacto = null;
+    let grupoMarcadores = null;
 
-            document.getElementById('screenHome').style.display = 'none';
-            document.getElementById('screenSageHub').style.display = 'none';
-            document.getElementById('screenSubmitEvent').style.display = 'none';
-            document.getElementById('screenDatabase').style.display = 'none';
-            document.getElementById('screenMap').style.display = 'none';
+    function navegarA(idPantalla) {
+        const container = document.getElementById('mainContainer');
+        container.className = idPantalla === 'screenDatabase' ? 'wide-container' : 
+                              idPantalla === 'screenMap' ? 'map-container' : '';
 
-            document.getElementById(idPantalla).style.display = 'block';
-            window.scrollTo(0, 0);
+        ['screenHome','screenSageHub','screenSubmitEvent','screenDatabase','screenMap']
+            .forEach(id => document.getElementById(id).style.display = 'none');
+
+        document.getElementById(idPantalla).style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+
+    function irABaseDatos(origen) {
+        pantallaOrigenDB = origen;
+        document.getElementById('btnBackFromDB').onclick = () => navegarA(pantallaOrigenDB);
+        renderizarTabla();
+        navegarA('screenDatabase');
+    }
+
+    function irAMapa(origen) {
+        pantallaOrigenMapa = origen;
+        const screenMap = document.getElementById('screenMap');
+        screenMap.innerHTML = '';
+
+        // Back button
+        const backBtn = document.createElement('button');
+        backBtn.className = 'btn btn-back';
+        backBtn.textContent = '← Back';
+        backBtn.style.cssText = 'position: absolute; top: 80px; left: 16px; z-index: 500;';
+        backBtn.onclick = () => navegarA(pantallaOrigenMapa);
+        document.body.appendChild(backBtn);
+
+        const mapDiv = document.createElement('div');
+        mapDiv.id = 'map';
+        mapDiv.style.cssText = 'height: calc(100vh - 67px); width: 100%;';
+        screenMap.appendChild(mapDiv);
+
+        navegarA('screenMap');
+        inicializarMapaNativo();
+
+        // Store back btn reference for cleanup
+        screenMap._backBtn = backBtn;
+    }
+
+    function inicializarMapaNativo() {
+        if (mapaTacto === null) {
+            mapaTacto = L.map('map').setView([35.1264, 33.4299], 10);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19, attribution: 'Tiles © Esri'
+            }).addTo(mapaTacto);
+            grupoMarcadores = L.layerGroup().addTo(mapaTacto);
         }
 
-        function irABaseDatos(origen) {
-            pantallaOrigenDB = origen;
-            document.getElementById('btnBackFromDB').onclick = function() { navegarA(pantallaOrigenDB); };
-            renderizarTabla();
-            navegarA('screenDatabase');
+        grupoMarcadores.clearLayers();
+
+        function dibujarPin(rep) {
+            if (!rep || !rep.latLon) return;
+            let coordsStr = String(rep.latLon).trim();
+            if (!coordsStr.includes(',')) return;
+            const coords = coordsStr.split(',').map(n => parseFloat(n.trim()));
+            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                const statusColor = rep.status === 'OPEN' ? '#F59E0B' : '#10B981';
+                const contenido = `
+                    <div style="font-family: Inter, sans-serif; font-size:13px; min-width:210px; color:#0f172a;">
+                        <strong style="color:#009EDB; font-size:14px;">${rep.id || '#'} — ${rep.title || 'Report'}</strong>
+                        <hr style="border:none; border-top: 1px solid #e2e8f0; margin: 8px 0;">
+                        <b>What:</b> ${rep.what || 'N/A'}<br>
+                        <b>Who:</b> ${rep.who || 'N/A'}<br>
+                        <b>Location:</b> ${rep.where || 'N/A'}<br>
+                        <b>Officer:</b> ${rep.author || 'N/A'}<br>
+                        <b>Status:</b> <span style="color:${statusColor}; font-weight:700;">${rep.status || 'OPEN'}</span>
+                    </div>`;
+                L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(contenido);
+            }
         }
 
-        function irAMapa(origen) {
-            pantallaOrigenMapa = origen;
-            document.getElementById('btnBackFromMap').onclick = function() { navegarA(pantallaOrigenMapa); };
-            navegarA('screenMap');
-            inicializarMapaNativo();
-        }
+        baseDeDatosReportes.forEach(rep => dibujarPin(rep));
 
-        function inicializarMapaNativo() {
-            if (mapaTacto === null) {
-                mapaTacto = L.map('map').setView([-36.6735, -64.3795], 13);
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    maxZoom: 19, attribution: 'Tiles © Esri'
-                }).addTo(mapaTacto);
-                grupoMarcadores = L.layerGroup().addTo(mapaTacto);
-            }
-
-            grupoMarcadores.clearLayers();
-
-            function dibujarPin(rep) {
-                if (!rep || !rep.latLon) return;
-                let coordsStr = String(rep.latLon).trim();
-                if (!coordsStr.includes(',')) return;
-                
-                const coords = coordsStr.split(',').map(num => parseFloat(num.trim()));
-                if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-                    const contenidoPopup = `
-                        <div style="color: #0f172a; font-family: sans-serif; font-size:13px; min-width: 200px;">
-                            <strong style="color:#009EDB;">${rep.id || '#'} - ${rep.title || 'Reporte'}</strong><br><br>
-                            <b>What:</b> ${rep.what || 'N/A'}<br>
-                            <b>Who:</b> ${rep.who || 'N/A'}<br>
-                            <b>Location:</b> ${rep.where || 'N/A'}<br>
-                            <b>Officer:</b> ${rep.author || 'N/A'}<br>
-                            <b>Status:</b> <span style="color:${rep.status === 'OPEN' ? '#b45309':'#15803d'}; font-weight:bold;">${rep.status || 'OPEN'}</span>
-                        </div>
-                    `;
-                    L.marker([coords[0], coords[1]]).addTo(grupoMarcadores).bindPopup(contenidoPopup);
-                }
-            }
-
-            if (Array.isArray(baseDeDatosReportes)) {
-                baseDeDatosReportes.forEach(rep => { dibujarPin(rep); });
-            }
-
-            if (typeof urlGoogleSheets !== 'undefined' && urlGoogleSheets.trim() !== "" && !urlGoogleSheets.includes("REPLACE_THIS")) {
-                fetch(urlGoogleSheets)
-                .then(response => response.json())
-                .then(pinesDelSheet => {
-                    if (Array.isArray(pinesDelSheet)) {
-                        pinesDelSheet.forEach(repSheet => {
-                            const existe = baseDeDatosReportes.some(r => String(r.id) === String(repSheet.id));
-                            if (!existe) {
-                                baseDeDatosReportes.push(repSheet);
-                                dibujarPin(repSheet);
+        if (urlGoogleSheets && !urlGoogleSheets.includes("REPLACE_THIS")) {
+            fetch(urlGoogleSheets)
+                .then(r => r.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(rep => {
+                            if (!baseDeDatosReportes.some(r => String(r.id) === String(rep.id))) {
+                                baseDeDatosReportes.push(rep);
+                                dibujarPin(rep);
                             }
                         });
                     }
                 })
-                .catch(error => { console.warn("Modo local activo:", error); });
-            }
-
-            setTimeout(() => { mapaTacto.invalidateSize(); }, 250);
+                .catch(err => console.warn("Local mode:", err));
         }
 
-        function controlarSubCategorias(tipo) {
-            if(tipo === 'What') {
-                const val = document.getElementById('selectWhat').value;
-                document.getElementById('subWhatCivilian').style.display = (val === 'CIVILIAN INCIDENTS') ? 'block' : 'none';
-                document.getElementById('subWhatIncursion').style.display = (val === 'INCURSION') ? 'block' : 'none';
-            }
-            if(tipo === 'Who') {
-                const val = document.getElementById('selectWho').value;
-                document.getElementById('subWhoPerp').style.display = (val === 'PERPETRATORS/ACTORS/OFFENDERS') ? 'block' : 'none';
-                document.getElementById('subWhoPart').style.display = (val === 'PARTICIPANTS') ? 'block' : 'none';
-                document.getElementById('subWhoOrg').style.display = (val === 'ORGANIZERS') ? 'block' : 'none';
-            }
-            if(tipo === 'Unficyp') {
-                const val = document.getElementById('selectOrg').value;
-                document.getElementById('subWhoUnficyp').style.display = (val === 'UNFICYP') ? 'block' : 'none';
-            }
-            if(tipo === 'Sector') {
-                const val = document.getElementById('selectSector').value;
-                document.getElementById('subSector1').style.display = (val === 'SECTOR 1') ? 'block' : 'none';
-            }
-        }
-
-        function actualizarTitulo() {
-            const formVal = document.getElementById('inputForm').value.split(':')[0] || "Report";
-            const desc = document.getElementById('incidentDesc').value;
-            if(!desc) return;
-            const palabras = desc.trim().split(/\s+/).filter(p => p.length > 2);
-            if(palabras.length > 0) {
-                document.getElementById('inputTitle').value = `${formVal}: ${palabras.slice(0, 4).join(' ')}`.substring(0, 50);
-            }
-        }
-
-        function validarArchivo() {
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput.files.length > 0 && (fileInput.files[0].size / 1024 / 1024) > 5) {
-                alert("⚠️ Archivo supera los 5MB.");
-                fileInput.value = "";
-            }
-        }
-function convertirMGRSaDecimal() {
-    const mgrsRaw = document.getElementById('mgrsInput').value.trim().replace(/\s+/g, '');
-    const decimalInput = document.getElementById('decimalInput');
-    
-    if (!mgrsRaw) {
-        decimalInput.value = "";
-        return;
+        setTimeout(() => mapaTacto.invalidateSize(), 250);
     }
 
-    try {
-        // La librería convierte el string MGRS en un array [Longitud, Latitud]
-        const resultado = mgrs.toPoint(mgrsRaw);
-        
-        // Formateamos a "Latitud, Longitud" con 5 decimales de precisión
-        const lat = resultado[1].toFixed(5);
-        const lon = resultado[0].toFixed(5);
-        
-        decimalInput.value = `${lat}, ${lon}`;
-    } catch (error) {
-        // Mientras el usuario esté escribiendo y la coordenada esté incompleta, mostrará este aviso sutil
-        decimalInput.value = "Format MGRS invalid or incomplete...";
-    }
-}
-        function validarYGuardarFormulario(event) {
-    event.preventDefault();
-    const alertBox = document.getElementById('feedbackAlert');
-    alertBox.style.color = "white";
-    alertBox.style.backgroundColor = "#b45309";
-    alertBox.style.display = "block";
-// Inyectamos el spinner animado al lado del texto operacional
-alertBox.innerHTML = `<div class="spinner"></div> Procesando adjuntos y sincronizando con base maestra SAGE...`;
-
-    const coordenadasRaw = document.getElementById('mgrsInput').value;
-    const mainWhat = document.getElementById('selectWhat').value;
-    let finalWhat = mainWhat;
-    if(mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
-    if(mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
-
-    const mainWho = document.getElementById('selectWho').value;
-    let finalWho = mainWho;
-    if(mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` -> ${document.getElementById('subWhoPerpSelect').value}`;
-    if(mainWho === 'PARTICIPANTS') finalWho += ` -> ${document.getElementById('subWhoPartSelect').value}`;
-    if(mainWho === 'ORGANIZERS') {
-        const orgSub = document.getElementById('selectOrg').value;
-        finalWho += ` -> ${orgSub}`;
-        if(orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
+    function controlarSubCategorias(tipo) {
+        if (tipo === 'What') {
+            const val = document.getElementById('selectWhat').value;
+            document.getElementById('subWhatCivilian').style.display = val === 'CIVILIAN INCIDENTS' ? 'block' : 'none';
+            document.getElementById('subWhatIncursion').style.display = val === 'INCURSION' ? 'block' : 'none';
+        }
+        if (tipo === 'Who') {
+            const val = document.getElementById('selectWho').value;
+            document.getElementById('subWhoPerp').style.display = val === 'PERPETRATORS/ACTORS/OFFENDERS' ? 'block' : 'none';
+            document.getElementById('subWhoPart').style.display = val === 'PARTICIPANTS' ? 'block' : 'none';
+            document.getElementById('subWhoOrg').style.display = val === 'ORGANIZERS' ? 'block' : 'none';
+        }
+        if (tipo === 'Unficyp') {
+            const val = document.getElementById('selectOrg').value;
+            document.getElementById('subWhoUnficyp').style.display = val === 'UNFICYP' ? 'block' : 'none';
+        }
+        if (tipo === 'Sector') {
+            const val = document.getElementById('selectSector').value;
+            document.getElementById('subSector1').style.display = val === 'SECTOR 1' ? 'block' : 'none';
+        }
     }
 
-    const mainSector = document.getElementById('selectSector').value;
-    let finalSector = mainSector;
-    if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
+    function actualizarTitulo() {
+        const formVal = document.getElementById('inputForm').value.split(':')[0] || "Report";
+        const desc = document.getElementById('incidentDesc').value;
+        if (!desc) return;
+        const palabras = desc.trim().split(/\s+/).filter(p => p.length > 2);
+        if (palabras.length > 0) {
+            document.getElementById('inputTitle').value = `${formVal}: ${palabras.slice(0, 4).join(' ')}`.substring(0, 50);
+        }
+    }
 
-    const reporteID = `#${secuencialID++}`;
-    const coordenadasMGRS = document.getElementById('mgrsInput').value;
-    const coordenadasDecimales = document.getElementById('decimalInput').value;
-    
-    const datosParaEnviar = {
-        id: reporteID,
-        eventDate: `${document.getElementById('evDate').value} - ${document.getElementById('evTime').value}`,
-        categories: document.getElementById('inputForm').value,
-        title: document.getElementById('inputTitle').value,
-        what: finalWhat,
-        // Guardamos ambas referencias en el campo "where" para comodidad visual
-        where: `${finalSector} (MGRS: ${coordenadasMGRS} -> Dec: ${coordenadasDecimales} - ${document.getElementById('inputLocName').value})`,
-        who: finalWho,
-        author: document.getElementById('inputOfficer').value,
-        sectorBase: mainSector,
-        submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
-        status: document.getElementById('inputStatus').value,
-        latLon: coordenadasDecimales, // <-- Enviamos los decimales puros a Google Sheets para mapear directo
-        fileUrl: "No adjunto"
-    };
+    function convertirMGRSaDecimal() {
+        const raw = document.getElementById('mgrsInput').value.trim().replace(/\s+/g, '');
+        const out = document.getElementById('decimalInput');
+        if (!raw) { out.value = ''; return; }
+        try {
+            const res = mgrs.toPoint(raw);
+            out.value = `${res[1].toFixed(5)}, ${res[0].toFixed(5)}`;
+        } catch {
+            out.value = 'Incomplete or invalid MGRS format...';
+        }
+    }
 
-    const fileInput = document.getElementById('fileInput');
+    function validarYGuardarFormulario(event) {
+        event.preventDefault();
+        const alertBox = document.getElementById('feedbackAlert');
+        alertBox.style.display = 'block';
+        alertBox.style.background = 'rgba(245,158,11,0.12)';
+        alertBox.style.border = '1px solid rgba(245,158,11,0.3)';
+        alertBox.style.color = '#F59E0B';
+        alertBox.innerHTML = `<span class="spinner"></span> Syncing with SAGE master database...`;
 
-    if (fileInput && fileInput.files && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const formDataCloud = new FormData();
-        formDataCloud.append('image', file);
+        const mainWhat = document.getElementById('selectWhat').value;
+        let finalWhat = mainWhat;
+        if (mainWhat === 'CIVILIAN INCIDENTS') finalWhat += ` (${document.getElementById('subWhatCivilianSelect').value})`;
+        if (mainWhat === 'INCURSION') finalWhat += ` (${document.getElementById('subWhatIncursionSelect').value})`;
 
-        // PONE TU NUEVA API KEY JUSTO DESPUÉS DE LA PARTE QUE DICE ?key=
-        fetch('https://api.imgbb.com/1/upload?key=618fc3ec3585f3a63407dac1c5085d92', {
-            method: 'POST',
-            body: formDataCloud
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success && result.data && result.data.url) {
-                datosParaEnviar.fileUrl = result.data.url;
-                console.log("¡Imagen subida con éxito! URL:", result.data.url);
-            } else {
-                datosParaEnviar.fileUrl = "No adjunto";
-                console.warn("ImgBB rechazó la imagen. Enviando datos sin adjunto.", result);
+        const mainWho = document.getElementById('selectWho').value;
+        let finalWho = mainWho;
+        if (mainWho === 'PERPETRATORS/ACTORS/OFFENDERS') finalWho += ` → ${document.getElementById('subWhoPerpSelect').value}`;
+        if (mainWho === 'PARTICIPANTS') finalWho += ` → ${document.getElementById('subWhoPartSelect').value}`;
+        if (mainWho === 'ORGANIZERS') {
+            const orgSub = document.getElementById('selectOrg').value;
+            finalWho += ` → ${orgSub}`;
+            if (orgSub === 'UNFICYP') finalWho += ` (${document.getElementById('subWhoUnficypSelect').value})`;
+        }
+
+        const mainSector = document.getElementById('selectSector').value;
+        let finalSector = mainSector;
+        if (mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
+
+        const reporteID = `#${secuencialID++}`;
+        const coordenadasMGRS = document.getElementById('mgrsInput').value;
+        const coordenadasDecimales = document.getElementById('decimalInput').value;
+
+        const datosParaEnviar = {
+            id: reporteID,
+            eventDate: `${document.getElementById('evDate').value} — ${document.getElementById('evTime').value}`,
+            categories: document.getElementById('inputForm').value,
+            title: document.getElementById('inputTitle').value,
+            what: finalWhat,
+            where: `${finalSector} (MGRS: ${coordenadasMGRS} → Dec: ${coordenadasDecimales} — ${document.getElementById('inputLocName').value})`,
+            who: finalWho,
+            author: document.getElementById('inputOfficer').value,
+            sectorBase: mainSector,
+            submitDate: `${document.getElementById('repDate').value} — ${document.getElementById('repTime').value}`,
+            status: document.getElementById('inputStatus').value,
+            latLon: coordenadasDecimales,
+            fileUrl: "No attachment"
+        };
+
+        const fileInput = document.getElementById('fileInput');
+
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            if (file.size / 1024 / 1024 > 5) {
+                alertBox.style.background = 'var(--danger-bg)';
+                alertBox.style.color = 'var(--danger)';
+                alertBox.innerHTML = '⚠ File exceeds 5MB limit. Please select a smaller file.';
+                return;
             }
+            const fd = new FormData();
+            fd.append('image', file);
+            fetch('https://api.imgbb.com/1/upload?key=618fc3ec3585f3a63407dac1c5085d92', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(result => {
+                    datosParaEnviar.fileUrl = result.success && result.data ? result.data.url : "No attachment";
+                    enviarFinal();
+                })
+                .catch(() => { datosParaEnviar.fileUrl = "No attachment"; enviarFinal(); });
+        } else {
             enviarFinal();
-        })
-        .catch((err) => {
-            console.error("Error de red en ImgBB, continuando envío alternativo:", err);
-            datosParaEnviar.fileUrl = "No adjunto";
-            enviarFinal();
-        });
-    } else {
-        datosParaEnviar.fileUrl = "No adjunto";
-        enviarFinal();
-    }
-
-    function enviarFinal() {
-        const formBody = new FormData();
-        for (const key in datosParaEnviar) {
-            formBody.append(key, datosParaEnviar[key]);
         }
 
-        fetch(urlGoogleSheets, { method: "POST", body: formBody })
-        .then(() => {
-            baseDeDatosReportes.push(datosParaEnviar);
-            alertBox.style.backgroundColor = "#16a34a";
-            alertBox.innerHTML = `✅ ¡Reporte ${reporteID} enviado con éxito!`;
-            document.getElementById('sageForm').reset();
-            document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
-            setTimeout(() => { 
-                alertBox.style.display = "none"; 
-                irABaseDatos('screenSageHub'); 
-            }, 1500);
-        })
-        .catch((error) => {
-            console.error("Error crítico enviando a Google Sheets:", error);
-            alertBox.style.backgroundColor = "#dc2626";
-            alertBox.innerHTML = "⚠️ Error de conexión con la base de datos.";
-        });
-    }
-}
+        function enviarFinal() {
+            const formBody = new FormData();
+            for (const key in datosParaEnviar) formBody.append(key, datosParaEnviar[key]);
 
-function renderizarTabla() {
-    const tableBody = document.getElementById('dbTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = "";
-    
-    if (baseDeDatosReportes.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="12">No hay reportes cargados.</td></tr>`;
-        return;
+            fetch(urlGoogleSheets, { method: "POST", body: formBody })
+                .then(() => {
+                    baseDeDatosReportes.push(datosParaEnviar);
+                    alertBox.style.background = 'rgba(16,185,129,0.12)';
+                    alertBox.style.border = '1px solid rgba(16,185,129,0.3)';
+                    alertBox.style.color = '#10B981';
+                    alertBox.innerHTML = `✓ Report ${reporteID} submitted successfully to SAGE.`;
+                    document.getElementById('sageForm').reset();
+                    document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
+                    setTimeout(() => {
+                        alertBox.style.display = 'none';
+                        irABaseDatos('screenSageHub');
+                    }, 2000);
+                })
+                .catch(() => {
+                    alertBox.style.background = 'var(--danger-bg)';
+                    alertBox.style.color = 'var(--danger)';
+                    alertBox.innerHTML = '✗ Connection error — could not reach SAGE database.';
+                });
+        }
     }
-    
-    for (let i = baseDeDatosReportes.length - 1; i >= 0; i--) {
-        const rep = baseDeDatosReportes[i];
-        
-        let celdaAdjunto = '<span style="color: #9ca3af; font-style: italic;">No adjunto</span>';
-        if (rep.fileUrl && rep.fileUrl !== "No adjunto" && rep.fileUrl.startsWith("http")) {
-            celdaAdjunto = `<a href="${rep.fileUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">Ver Adjunto</a>`;
+
+    function renderizarTabla() {
+        const tbody = document.getElementById('dbTableBody');
+        const countEl = document.getElementById('dbCount');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (baseDeDatosReportes.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                            <p>No reports on record. Submit your first event to populate this table.</p>
+                        </div>
+                    </td>
+                </tr>`;
+            if (countEl) countEl.textContent = '0 reports loaded';
+            return;
         }
 
-        tableBody.innerHTML += `
-            <tr>
-                <td>${rep.id}</td>
-                <td>${rep.eventDate}</td>
-                <td>${rep.title}</td>
-                <td><strong>What:</strong> ${rep.what}<br><strong>Who:</strong> ${rep.who}<br><strong>Where:</strong> ${rep.where}</td>
-                <td>${rep.author}</td>
-                <td>${rep.status}</td>
-                <td>${celdaAdjunto}</td>
-            </tr>
-        `;
+        if (countEl) countEl.textContent = `${baseDeDatosReportes.length} report${baseDeDatosReportes.length !== 1 ? 's' : ''} loaded`;
+
+        for (let i = baseDeDatosReportes.length - 1; i >= 0; i--) {
+            const rep = baseDeDatosReportes[i];
+            const attachment = (rep.fileUrl && rep.fileUrl !== "No attachment" && rep.fileUrl.startsWith("http"))
+                ? `<a href="${rep.fileUrl}" target="_blank" style="color: var(--un-blue); text-decoration: none; font-weight: 600;">View ↗</a>`
+                : `<span style="color: var(--text-muted); font-style: italic;">None</span>`;
+            const statusBadge = rep.status === 'OPEN'
+                ? `<span class="badge badge-open">● OPEN</span>`
+                : `<span class="badge badge-close">● CLOSED</span>`;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge badge-id">${rep.id}</span></td>
+                    <td style="white-space:nowrap;">${rep.eventDate}</td>
+                    <td style="font-weight:600; max-width:160px;">${rep.title || '—'}</td>
+                    <td style="max-width:260px; font-size:11px; color: var(--text-secondary);">
+                        <strong>What:</strong> ${rep.what}<br>
+                        <strong>Who:</strong> ${rep.who}<br>
+                        <strong>Where:</strong> ${rep.where}
+                    </td>
+                    <td>${rep.author}</td>
+                    <td>${statusBadge}</td>
+                    <td>${attachment}</td>
+                </tr>`;
+        }
     }
-}
 </script>
 </body>
 </html>
