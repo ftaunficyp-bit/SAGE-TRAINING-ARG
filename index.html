@@ -591,6 +591,8 @@
         enviarFinal();
     }
 
+    // ... Código anterior de validarYGuardarFormulario ...
+
     function enviarFinal() {
         const formBody = new FormData();
         for (const key in datosParaEnviar) {
@@ -611,8 +613,11 @@
             alertBox.style.backgroundColor = "#dc2626";
             alertBox.innerHTML = "⚠️ Error de conexión.";
         });
-    }
-}
+    } // <-- ESTA LLAVE CIERRA "enviarFinal"
+} // <-- ESTA LLAVE CIERRA "validarYGuardarFormulario"
+
+// REVISA AQUÍ: Justo abajo de esto NO debería haber ninguna llave "}" suelta.
+// Deberían seguir otras funciones de tu SAGE Hub, o directamente el cierre de la etiqueta </script>
 
     const fileInput = document.getElementById('fileInput');
 
