@@ -566,7 +566,9 @@
 
     const fileInput = document.getElementById('fileInput');
 
-    if (fileInput && fileInput.files.length > 0) {
+    // Forzamos la verificación e imprimimos en consola para auditar
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        console.log("Archivo detectado en el input:", fileInput.files[0].name);
         const file = fileInput.files[0];
         const formDataCloud = new FormData();
         formDataCloud.append('image', file);
@@ -577,16 +579,22 @@
         })
         .then(response => response.json())
         .then(result => {
+            console.log("Respuesta del servidor de imágenes:", result);
             if (result.success && result.data && result.data.url) {
                 datosParaEnviar.fileUrl = result.data.url;
+            } else {
+                datosParaEnviar.fileUrl = "No adjunto";
             }
             enviarFinal();
         })
         .catch((err) => {
-            console.error("Error en la subida:", err);
+            console.error("Error en la subida a ImgBB:", err);
+            datosParaEnviar.fileUrl = "No adjunto";
             enviarFinal();
         });
     } else {
+        console.log("No se detectó ningún archivo seleccionado en el ID 'fileInput'");
+        datosParaEnviar.fileUrl = "No adjunto";
         enviarFinal();
     }
 
@@ -609,7 +617,7 @@
             }, 1500);
         })
         .catch((error) => {
-            console.error("Error GSheets:", error);
+            console.error("Error crítico enviando a Google Sheets:", error);
             alertBox.style.backgroundColor = "#dc2626";
             alertBox.innerHTML = "⚠️ Error de conexión con la base de datos.";
         });
@@ -629,6 +637,13 @@ function renderizarTabla() {
     
     for (let i = baseDeDatosReportes.length - 1; i >= 0; i--) {
         const rep = baseDeDatosReportes[i];
+        
+        // CORRECCIÓN DEL 404: Si dice "No adjunto", no creamos un hipervínculo roto
+        let celdaAdjunto = "No adjunto";
+        if (rep.fileUrl && rep.fileUrl !== "No adjunto" && rep.fileUrl.startsWith("http")) {
+            celdaAdjunto = `<a href="${rep.fileUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">Ver Adjunto</a>`;
+        }
+
         tableBody.innerHTML += `
             <tr>
                 <td>${rep.id}</td>
@@ -637,7 +652,7 @@ function renderizarTabla() {
                 <td><strong>What:</strong> ${rep.what}<br><strong>Who:</strong> ${rep.who}<br><strong>Where:</strong> ${rep.where}</td>
                 <td>${rep.author}</td>
                 <td>${rep.status}</td>
-                <td><a href="${rep.fileUrl}" target="_blank">${rep.fileUrl === "No adjunto" ? "No adjunto" : "Ver Adjunto"}</a></td>
+                <td>${celdaAdjunto}</td>
             </tr>
         `;
     }
