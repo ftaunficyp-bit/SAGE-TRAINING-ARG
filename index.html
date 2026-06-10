@@ -56,6 +56,7 @@
         /* ALERTA */
         .alert { display: none; margin-top: 20px; padding: 15px; border-radius: 6px; font-weight: bold; text-align: center; }
     </style>
+<script src="https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js"></script>
 </head>
 <body>
 
@@ -319,9 +320,14 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="required">18. COORDINATES (Lat, Lon)</label>
-                        <input type="text" id="mgrsInput" required placeholder="Ej: -36.6725, -64.3795">
-                    </div>
+    <label for="mgrsInput">MGRS Coordinates:</label>
+    <input type="text" id="mgrsInput" placeholder="Ej: 36SVD42318152" oninput="convertirMGRSaDecimal()" required />
+</div>
+
+<div class="form-group">
+    <label for="decimalInput">Google Decimal Coordinates (Auto):</label>
+    <input type="text" id="decimalInput" style="background-color: #1e293b; color: #94a3b8; cursor: not-allowed;" readonly />
+</div>
 
                     <div class="form-group full-width">
                         <label class="required">19. LOCATION NAME</label>
@@ -517,7 +523,29 @@
                 fileInput.value = "";
             }
         }
+function convertirMGRSaDecimal() {
+    const mgrsRaw = document.getElementById('mgrsInput').value.trim().replace(/\s+/g, '');
+    const decimalInput = document.getElementById('decimalInput');
+    
+    if (!mgrsRaw) {
+        decimalInput.value = "";
+        return;
+    }
 
+    try {
+        // La librería convierte el string MGRS en un array [Longitud, Latitud]
+        const resultado = mgrs.toPoint(mgrsRaw);
+        
+        // Formateamos a "Latitud, Longitud" con 5 decimales de precisión
+        const lat = resultado[1].toFixed(5);
+        const lon = resultado[0].toFixed(5);
+        
+        decimalInput.value = `${lat}, ${lon}`;
+    } catch (error) {
+        // Mientras el usuario esté escribiendo y la coordenada esté incompleta, mostrará este aviso sutil
+        decimalInput.value = "Format MGRS invalid or incomplete...";
+    }
+}
         function validarYGuardarFormulario(event) {
     event.preventDefault();
     const alertBox = document.getElementById('feedbackAlert');
@@ -547,20 +575,23 @@
     if(mainSector === 'SECTOR 1') finalSector += ` / ${document.getElementById('subSector1Select').value}`;
 
     const reporteID = `#${secuencialID++}`;
-
+    const coordenadasMGRS = document.getElementById('mgrsInput').value;
+    const coordenadasDecimales = document.getElementById('decimalInput').value;
+    
     const datosParaEnviar = {
         id: reporteID,
         eventDate: `${document.getElementById('evDate').value} - ${document.getElementById('evTime').value}`,
         categories: document.getElementById('inputForm').value,
         title: document.getElementById('inputTitle').value,
         what: finalWhat,
-        where: `${finalSector} (Toay: ${coordenadasRaw} - ${document.getElementById('inputLocName').value})`,
+        // Guardamos ambas referencias en el campo "where" para comodidad visual
+        where: `${finalSector} (MGRS: ${coordenadasMGRS} -> Dec: ${coordenadasDecimales} - ${document.getElementById('inputLocName').value})`,
         who: finalWho,
         author: document.getElementById('inputOfficer').value,
         sectorBase: mainSector,
         submitDate: `${document.getElementById('repDate').value} - ${document.getElementById('repTime').value}`,
         status: document.getElementById('inputStatus').value,
-        latLon: coordenadasRaw,
+        latLon: coordenadasDecimales, // <-- Enviamos los decimales puros a Google Sheets para mapear directo
         fileUrl: "No adjunto"
     };
 
