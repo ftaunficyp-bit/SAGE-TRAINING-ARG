@@ -582,12 +582,12 @@
             } else {
                 datosParaEnviar.fileUrl = "No adjunto";
             }
-            enviarFinal();
+            enviarFinal(); // <-- CORREGIDO: Llama a la función real de envío
         })
         .catch((err) => {
             console.error("Error en la subida:", err);
             datosParaEnviar.fileUrl = "No adjunto";
-            enviarFinal();
+            enviarFinal(); // <-- CORREGIDO: En caso de error de red, procesa igual
         });
     } else {
         datosParaEnviar.fileUrl = "No adjunto";
@@ -604,7 +604,7 @@
         .then(() => {
             baseDeDatosReportes.push(datosParaEnviar);
             alertBox.style.backgroundColor = "#16a34a";
-            alertBox.innerHTML = `✅ ¡Reporte ${reporteID} enviado!`;
+            alertBox.innerHTML = `✅ ¡Reporte ${reporteID} enviado con éxito!`;
             document.getElementById('sageForm').reset();
             document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
             setTimeout(() => { 
@@ -615,7 +615,7 @@
         .catch((error) => {
             console.error("Error GSheets:", error);
             alertBox.style.backgroundColor = "#dc2626";
-            alertBox.innerHTML = "⚠️ Error de conexión.";
+            alertBox.innerHTML = "⚠️ Error de conexión con la base de datos.";
         });
     }
 }
