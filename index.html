@@ -8,53 +8,166 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* ESTILOS GENERALES */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0f172a; color: #f1f5f9; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .container { background-color: #1e293b; width: 100%; max-width: 1100px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); padding: 40px; }
-        .wide-container { max-width: 1300px; }
-        .map-container { max-width: 100% !important; width: 100vw !important; height: 95vh !important; padding: 10px; }
-        
-        /* HOME */
-        .home-title { border-bottom: 2px solid #334155; padding-bottom: 15px; margin-bottom: 30px; color: #009EDB; }
-        .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .home-section { background: #0f172a; padding: 25px; border-radius: 8px; border-top: 4px solid #009EDB; }
-        .home-section h3 { margin-bottom: 20px; font-size: 18px; color: #fff; }
-        
-        /* SAGE HUB */
-        .sage-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; }
+        /* ==========================================
+   HOJA DE ESTILO RENOVADA: SAGE COMMAND HUB
+   ========================================== */
 
-        /* FORMULARIO */
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .full-width { grid-column: span 2; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; color: #cbd5e1; }
-        label.required::after { content: " *"; color: #ef4444; }
-        input, select, textarea { width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 14px; }
-        input:focus, select:focus, textarea:focus { border-color: #009EDB; outline: none; }
-        .sub-group { margin-top: 10px; padding-left: 15px; border-left: 2px solid #009EDB; display: none; }
+:root {
+  --bg-principal: #0f172a;       /* Slate 900: Fondo profundo y moderno */
+  --bg-tarjeta: #1e293b;         /* Slate 800: Tarjetas y contenedores */
+  --azul-tactico: #009edb;       /* Azul SAGE para elementos principales */
+  --azul-hover: #38bdf8;         /* Azul brillante para cuando pasas el mouse */
+  --verde-exito: #10b981;        /* Esmeralda para reportes enviados */
+  --texto-principal: #f8fafc;    /* Blanco sedoso para evitar fatiga */
+  --texto-secundario: #94a3b8;   /* Gris claro para descripciones secundarias */
+  --transicion-suave: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-        /* BASE DE DATOS */
-        .db-table-wrapper { width: 100%; overflow-x: auto; margin-top: 20px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th { background-color: #334155; color: #fff; padding: 12px 15px; font-weight: 600; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #334155; vertical-align: top; line-height: 1.5; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .badge-open { background-color: #b45309; color: #fef3c7; }
-        .badge-close { background-color: #15803d; color: #dcfce7; }
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-principal);
+  color: var(--texto-principal);
+  -webkit-font-smoothing: antialiased;
+}
 
-        /* CONTENEDOR MAPA */
-        .map-iframe-wrapper { width: 100%; height: 650px; border: 2px solid #334155; border-radius: 8px; margin-top: 10px; background: #0f172a; }
+/* --- TARJETAS Y CONTENEDORES --- */
+.container, .screen, .card {
+  background-color: var(--bg-tarjeta);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  transition: var(--transicion-suave);
+}
 
-        /* BOTONES */
-        .btn { background: #009EDB; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; text-align: center; }
-        .btn:hover { background: #007cc0; }
-        .btn-secondary { background: #475569; }
-        .btn-secondary:hover { background: #334155; }
-        .btn-back { width: auto; background: transparent; color: #94a3b8; border: 1px solid #475569; margin-bottom: 20px; padding: 6px 12px; }
+/* Efecto de elevación al pasar sobre los módulos principales del HOME */
+.card-modulo:hover {
+  transform: translateY(-4px);
+  border-color: var(--azul-tactico);
+  box-shadow: 0 12px 20px -3px rgba(0, 158, 219, 0.15);
+}
 
-        /* ALERTA */
-        .alert { display: none; margin-top: 20px; padding: 15px; border-radius: 6px; font-weight: bold; text-align: center; }
+/* --- BOTONES DE ACCIÓN --- */
+button, .btn {
+  background: var(--azul-tactico);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transicion-suave);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Efecto al apoyar el mouse en botones */
+button:hover, .btn:hover {
+  background: var(--azul-hover);
+  transform: scale(1.02); /* Crece un 2% de forma sutil */
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+/* Efecto de hundimiento físico al hacer clic */
+button:active, .btn:active {
+  transform: scale(0.98);
+}
+
+/* --- INPUTS Y FORMULARIOS --- */
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  background-color: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: var(--transicion-suave);
+}
+
+/* Cuando el usuario hace clic adentro de una casilla para escribir */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--azul-tactico);
+  box-shadow: 0 0 0 3px rgba(0, 158, 219, 0.25);
+  background-color: #111827;
+}
+
+/* inputs bloqueados (como el de coordenadas automáticas) */
+input[readonly] {
+  background-color: #090d16 !important;
+  color: var(--texto-secundario);
+  border-color: #1e293b;
+  cursor: not-allowed;
+}
+
+/* --- TABLAS DE BASE DE DATOS --- */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 15px;
+}
+
+th {
+  background-color: #0f172a;
+  color: var(--azul-tactico);
+  font-weight: 600;
+  padding: 14px;
+  text-align: left;
+  border-bottom: 2px solid #334155;
+}
+
+td {
+  padding: 14px;
+  border-bottom: 1px solid #1e293b;
+  color: var(--texto-principal);
+  transition: var(--transicion-suave);
+}
+
+/* Ilumina la fila completa de la tabla donde el usuario tiene apoyado el mouse */
+tr:hover td {
+  background-color: rgba(56, 189, 248, 0.05);
+}
+
+/* --- ALERTAS Y ANIMACIÓN DE CARGA (SPINNER) --- */
+#feedbackAlert {
+  border-radius: 8px;
+  padding: 16px;
+  font-weight: 500;
+  display: none;
+  animation: deslizarAlerta 0.3s ease-out;
+}
+
+/* El círculo giratorio de carga */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: girar 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+/* Keyframes de Animaciones */
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes deslizarAlerta {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
     </style>
 <script src="https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js"></script>
 </head>
@@ -552,7 +665,8 @@ function convertirMGRSaDecimal() {
     alertBox.style.color = "white";
     alertBox.style.backgroundColor = "#b45309";
     alertBox.style.display = "block";
-    alertBox.innerHTML = "⏳ Enviando reporte y procesando archivo...";
+// Inyectamos el spinner animado al lado del texto operacional
+alertBox.innerHTML = `<div class="spinner"></div> Procesando adjuntos y sincronizando con base maestra SAGE...`;
 
     const coordenadasRaw = document.getElementById('mgrsInput').value;
     const mainWhat = document.getElementById('selectWhat').value;
