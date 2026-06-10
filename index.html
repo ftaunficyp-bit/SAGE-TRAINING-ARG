@@ -636,12 +636,11 @@
         .then(response => response.json())
         .then(result => {
             if (result.success && result.data && result.data.url) {
-                datosParaEnviar.fileUrl = result.data.url; 
-                enviarAGoogleSheets();
+                datosParaEnviar.fileUrl = result.data.url;
             } else {
                 datosParaEnviar.fileUrl = "No adjunto";
-                enviarAGoogleSheets();
             }
+            enviarAGoogleSheets();
         })
         .catch((err) => {
             console.error("Error en la subida:", err);
@@ -656,11 +655,15 @@
 
         function renderizarTabla() {
     const tableBody = document.getElementById('dbTableBody');
+    if (!tableBody) return; // Seguridad por si no encuentra el elemento
+    
     tableBody.innerHTML = "";
+    
     if (baseDeDatosReportes.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="12">No hay reportes cargados.</td></tr>`;
         return;
     }
+    
     for (let i = baseDeDatosReportes.length - 1; i >= 0; i--) {
         const rep = baseDeDatosReportes[i];
         tableBody.innerHTML += `
@@ -672,7 +675,8 @@
                 <td>${rep.author}</td>
                 <td>${rep.status}</td>
                 <td><a href="${rep.fileUrl}" target="_blank">${rep.fileUrl === "No adjunto" ? "No adjunto" : "Ver Adjunto"}</a></td>
-            </tr>`;
+            </tr>
+        `;
     }
 }
     </script>
