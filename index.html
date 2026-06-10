@@ -579,18 +579,14 @@
         .then(result => {
             if (result.success && result.data && result.data.url) {
                 datosParaEnviar.fileUrl = result.data.url;
-            } else {
-                datosParaEnviar.fileUrl = "No adjunto";
             }
-            enviarFinal(); // <-- CORREGIDO: Llama a la función real de envío
+            enviarFinal();
         })
         .catch((err) => {
             console.error("Error en la subida:", err);
-            datosParaEnviar.fileUrl = "No adjunto";
-            enviarFinal(); // <-- CORREGIDO: En caso de error de red, procesa igual
+            enviarFinal();
         });
     } else {
-        datosParaEnviar.fileUrl = "No adjunto";
         enviarFinal();
     }
 
