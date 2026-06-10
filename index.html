@@ -579,16 +579,19 @@
         .then(result => {
             if (result.success && result.data && result.data.url) {
                 datosParaEnviar.fileUrl = result.data.url;
+            } else {
+                datosParaEnviar.fileUrl = "No adjunto";
             }
-            // Envía inmediatamente después de recibir respuesta de la API
-            enviarFinal();
+            enviarAGoogleSheets();
         })
         .catch((err) => {
-            console.error("Error API:", err);
-            enviarFinal();
+            console.error("Error en la subida:", err);
+            datosParaEnviar.fileUrl = "No adjunto";
+            enviarAGoogleSheets();
         });
     } else {
-        enviarFinal();
+        datosParaEnviar.fileUrl = "No adjunto";
+        enviarAGoogleSheets();
     }
 
     // ... Código anterior de validarYGuardarFormulario ...
@@ -652,17 +655,26 @@
 }
 
         function renderizarTabla() {
-            const tableBody = document.getElementById('dbTableBody');
-            tableBody.innerHTML = "";
-            if (baseDeDatosReportes.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No hay reportes cargados.</td></tr>`;
-                return;
-            }
-            for (let i = baseDeDatosReportes.length - 1; i >= 0; i--) {
-                const rep = baseDeDatosReportes[i];
-                tableBody.innerHTML += `<tr><td><b>${rep.id}</b></td><td>${rep.eventDate}</td><td><b>${rep.title}</b><br><b>What:</b> ${rep.what}<br><b>Who:</b> ${rep.who}<br><b>Where:</b> ${rep.where}</td><td>${rep.author}</td><td>${rep.status}</td></tr>`;
-            }
-        }
+    const tableBody = document.getElementById('dbTableBody');
+    tableBody.innerHTML = "";
+    if (baseDeDatosReportes.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="12">No hay reportes cargados.</td></tr>`;
+        return;
+    }
+    for (let i = baseDeDatosReportes.length - 1; i >= 0; i--) {
+        const rep = baseDeDatosReportes[i];
+        tableBody.innerHTML += `
+            <tr>
+                <td>${rep.id}</td>
+                <td>${rep.eventDate}</td>
+                <td>${rep.title}</td>
+                <td><strong>What:</strong> ${rep.what}<br><strong>Who:</strong> ${rep.who}<br><strong>Where:</strong> ${rep.where}</td>
+                <td>${rep.author}</td>
+                <td>${rep.status}</td>
+                <td><a href="${rep.fileUrl}" target="_blank">${rep.fileUrl === "No adjunto" ? "No adjunto" : "Ver Adjunto"}</a></td>
+            </tr>`;
+    }
+}
     </script>
 </body>
 </html>
