@@ -1023,12 +1023,12 @@ td strong{color:var(--text-2);font-weight:600}
 
             <div class="form-section-title">Reporting Officer</div>
             <div class="form-group"><label>15. Perpetrator name</label><input type="text" id="inputPerpName" placeholder="Name (if applicable)"></div>
-            <div class="form-group"><label class="required">16. Reporting officer — name &amp; rank</label><input type="text" id="inputOfficer" required placeholder="e.g. Teniente Primero Perez"></div>
+            <div class="form-group"><label class="required">16. Reporting officer — name &amp; rank</label><input type="text" id="inputOfficer" required placeholder="e.g. Lt PEREZ Juan"></div>
             <div class="form-group"><label class="required">17. Status of event</label><select id="inputStatus" required><option value="OPEN">OPEN</option><option value="CLOSE">CLOSE</option></select></div>
             <div class="form-group"></div>
 
             <div class="form-section-title">Location</div>
-            <div class="form-group"><label class="required">18a. MGRS coordinates</label><input type="text" id="mgrsInput" placeholder="e.g. 36SVD42318152" oninput="convertirMGRSaDecimal()" required></div>
+            <div class="form-group"><label class="required">18a. MGRS coordinates</label><input type="text" id="mgrsInput" placeholder="e.g. 20HLE7906339877" oninput="convertirMGRSaDecimal()" required></div>
             <div class="form-group"><label>18b. Decimal coordinates (auto)</label><input type="text" id="decimalInput" readonly placeholder="Auto-converted..."></div>
             <div class="form-group full-width"><label class="required">19. Location name</label><input type="text" id="inputLocName" required placeholder="Geographic name of location"></div>
 
@@ -1297,7 +1297,7 @@ function irAMapa(origen) {
 /* ── MAP ────────────────────────────────────────────────── */
 function inicializarMapaNativo() {
   if (mapaTacto) return;
-  mapaTacto = L.map('mapDiv').setView([35.1264, 33.4299], 10);
+  mapaTacto = L.map('mapDiv').setView([-36.67905, -64.35350], 10);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
     maxZoom:19, attribution:'Tiles © Esri'
   }).addTo(mapaTacto);
