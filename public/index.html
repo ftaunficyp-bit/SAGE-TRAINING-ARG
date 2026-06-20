@@ -722,6 +722,45 @@ td strong{color:var(--text-2);font-weight:600}
   from{opacity:0;transform:translateY(16px)}
   to{opacity:1;transform:none}
 }
+
+/* ── PASSWORD FIELD CON TOGGLE ───────────────────────────── */
+.pwd-wrap{position:relative;display:flex;align-items:center}
+.pwd-wrap input{padding-right:44px}
+.pwd-toggle{
+  position:absolute;right:12px;
+  background:none;border:none;cursor:pointer;padding:4px;
+  color:rgba(0,158,219,.6);transition:color .2s;
+  display:flex;align-items:center;
+}
+.pwd-toggle:hover{color:var(--un)}
+.pwd-toggle svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+
+/* ── LOADING OVERLAY ─────────────────────────────────────── */
+#globalLoader{
+  position:fixed;inset:0;z-index:99999;
+  background:rgba(8,14,26,.85);
+  backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:16px;
+}
+#globalLoader.active{display:flex}
+.loader-ring{
+  width:48px;height:48px;
+  border:3px solid rgba(0,158,219,.2);
+  border-top-color:var(--un);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+#globalLoader p{font-size:13px;color:var(--text-2);letter-spacing:.06em}
+
+/* ── SESSION BANNER ──────────────────────────────────────── */
+.session-bar{
+  background:rgba(16,185,129,.1);border-bottom:1px solid rgba(16,185,129,.25);
+  color:#10B981;font-size:11px;font-weight:600;
+  padding:6px 24px;text-align:center;letter-spacing:.06em;
+  display:none;
+}
+.session-bar.active{display:block}
 </style>
 </head>
 <body>
@@ -786,21 +825,32 @@ td strong{color:var(--text-2);font-weight:600}
       </div>
     </div>
 
-    <!-- Password (auto-fill) -->
+    <!-- Password con show/hide -->
     <div class="login-field">
       <label>Access Code</label>
-      <input type="password" id="loginPassword" readonly placeholder="Auto-filled on user selection" autocomplete="off">
+      <div class="pwd-wrap">
+        <input type="password" id="loginPassword" placeholder="Auto-filled — or type manually" autocomplete="off">
+        <button type="button" class="pwd-toggle" onclick="togglePwdVisibility()" title="Show/hide password" aria-label="Toggle password visibility">
+          <svg id="eyeIcon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
     </div>
 
     <div id="loginError"></div>
 
-    <button class="btn-login" onclick="doLogin(event)">
+    <button class="btn-login" onclick="doLogin(event)" id="loginBtn">
       <svg style="width:16px;height:16px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;vertical-align:middle;margin-right:6px" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
       Authenticate &amp; Enter
     </button>
 
     <p class="login-footer">UNFICYP · UN Peacekeeping · Training Environment Only · Not for operational use</p>
   </div>
+</div>
+
+<!-- Loading overlay global -->
+<div id="globalLoader">
+  <div class="loader-ring"></div>
+  <p id="loaderMsg">Connecting to SAGE database...</p>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
@@ -1095,103 +1145,202 @@ td strong{color:var(--text-2);font-weight:600}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
-   APP STATE
-════════════════════════════════════════════════════════════ */
-const urlGoogleSheets = "https://script.google.com/macros/s/AKfycbwYD9dYDrpW9aLO4z7FsmJtqGZ2FsZICkZIJJR1ycCxuWuCSr_OI-RPxvprIt_LOX4R/exec";
+   UNITE AWARE v2  –  Frontend con autenticación real (JWT)
+   Backend: Node.js + Express + SQLite
+   ════════════════════════════════════════════════════════════ */
 
-// Per-user local data store  { username: [reports] }
-const userDataStore = {};
+// ── API CONFIG ────────────────────────────────────────────
+// En desarrollo: http://localhost:3000
+// En producción: '' (mismo dominio, el servidor sirve el HTML)
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : '';  // producción: mismo dominio
 
-// Current session
-let currentUser = null;
-let secuencialID = 1;
-let pantallaOrigenDB = 'screenHome';
+// ── API HELPER ────────────────────────────────────────────
+// IMPORTANTE: usamos SOLO localStorage como fuente del token.
+// Antes había una copia duplicada en sessionStorage que podía
+// desincronizarse (modo incógnito, race conditions, etc.) y
+// causaba que las peticiones salieran SIN token → 401 silencioso
+// → "Search Events" aparecía vacío aunque el login fuera exitoso.
+async function apiFetch(path, opts = {}) {
+  const token = localStorage.getItem('ua_token');
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(API_BASE + path, { ...opts, headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error de red' }));
+    // Si el token venció o es inválido, limpiamos sesión y mandamos
+    // al usuario de vuelta al login en vez de dejarlo con una pantalla
+    // vacía sin explicación.
+    if (res.status === 401) {
+      localStorage.removeItem('ua_token');
+      localStorage.removeItem('ua_user');
+    }
+    throw Object.assign(new Error(err.error || 'Error'), { status: res.status });
+  }
+  return res.json();
+}
+
+// ── LOADER ────────────────────────────────────────────────
+function showLoader(msg = 'Processing...') {
+  document.getElementById('loaderMsg').textContent = msg;
+  document.getElementById('globalLoader').classList.add('active');
+}
+function hideLoader() {
+  document.getElementById('globalLoader').classList.remove('active');
+}
+
+// ── APP STATE ─────────────────────────────────────────────
+let currentUser    = null;  // { id, username, role }
+let reportCounter  = 1;
+let pantallaOrigenDB   = 'screenHome';
 let pantallaOrigenMapa = 'screenHome';
-let mapaTacto = null;
+let mapaTacto      = null;
 let grupoMarcadores = null;
 
-// Training credentials — each user gets auto-password
+// Passwords locales SOLO para auto-rellenar el campo en pantalla.
+// La verificación REAL la hace el backend con bcrypt.
 const USER_PASSWORDS = {
-  "OP-3-S1-UNFICYP@TRAINING.ARG":    "S1-ALFA-3",
-  "OP-8-S1-UNFICYP@TRAINING.ARG":    "S1-ALFA-8",
-  "OP-18-S1-UNFICYP@TRAINING.ARG":   "S1-BRAVO-18",
-  "OP-32-S1-UNFICYP@TRAINING.ARG":   "S1-BRAVO-32",
-  "OP-38-S1-UNFICYP@TRAINING.ARG":   "S1-CHARLIE-38",
-  "EP-1-S1-UNFICYP@TRAINING.ARG":    "EP-FOXTROT-01",
-  "EP-2-S1-UNFICYP@TRAINING.ARG":    "EP-FOXTROT-02",
-  "EP-3-S1-UNFICYP@TRAINING.ARG":    "EP-FOXTROT-03",
-  "MOLOS-GROUP-S1-UNFICYP@TRAINING.ARG": "MOLOS-COMMAND-00"
+  "OP-3-S1-UNFICYP@TRAINING.ARG":       "S1-ALFA-3",
+  "OP-8-S1-UNFICYP@TRAINING.ARG":       "S1-ALFA-8",
+  "OP-18-S1-UNFICYP@TRAINING.ARG":      "S1-BRAVO-18",
+  "OP-32-S1-UNFICYP@TRAINING.ARG":      "S1-BRAVO-32",
+  "OP-38-S1-UNFICYP@TRAINING.ARG":      "S1-CHARLIE-38",
+  "EP-1-S1-UNFICYP@TRAINING.ARG":       "EP-FOXTROT-01",
+  "EP-2-S1-UNFICYP@TRAINING.ARG":       "EP-FOXTROT-02",
+  "EP-3-S1-UNFICYP@TRAINING.ARG":       "EP-FOXTROT-03",
+  "MOLOS-GROUP-S1-UNFICYP@TRAINING.ARG":"MOLOS-COMMAND-00"
 };
 
 const MOLOS_USER = "MOLOS-GROUP-S1-UNFICYP@TRAINING.ARG";
 
-/* ── LOGIN ──────────────────────────────────────────────── */
+
+/* ── PASSWORD SHOW/HIDE ─────────────────────────────────── */
+function togglePwdVisibility() {
+  const input = document.getElementById('loginPassword');
+  const icon  = document.getElementById('eyeIcon');
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  icon.innerHTML = isHidden
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+}
+
+/* ── AUTO-FILL PASSWORD ON USER SELECT ──────────────────── */
 function onUserSelect() {
   const sel = document.getElementById('loginUserSelect').value;
   const pwd = document.getElementById('loginPassword');
-  pwd.value = sel ? USER_PASSWORDS[sel] : '';
+  pwd.value = sel ? (USER_PASSWORDS[sel] || '') : '';
   document.getElementById('loginError').classList.remove('show');
 }
 
-function doLogin(e) {
-  // Ripple animation
-  const btn = e.currentTarget;
+/* ── LOGIN (real – llama al backend) ───────────────────── */
+async function doLogin(e) {
+  // Ripple
+  const btn = e.currentTarget || document.getElementById('loginBtn');
   const r = document.createElement('span');
   r.className = 'ripple';
   const rect = btn.getBoundingClientRect();
   const size = Math.max(rect.width, rect.height);
-  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  r.style.cssText = `width:${size}px;height:${size}px;left:${(e.clientX||rect.left+rect.width/2)-rect.left-size/2}px;top:${(e.clientY||rect.top+rect.height/2)-rect.top-size/2}px`;
   btn.appendChild(r);
   setTimeout(() => r.remove(), 700);
 
-  const sel = document.getElementById('loginUserSelect').value;
-  const pwd = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
+  const username = document.getElementById('loginUserSelect').value;
+  const password = document.getElementById('loginPassword').value.trim();
+  const errEl    = document.getElementById('loginError');
 
-  if (!sel) {
+  if (!username) {
     errEl.textContent = '⚠ Please select an operator.';
-    errEl.classList.add('show');
-    return;
+    errEl.classList.add('show'); return;
   }
-  if (pwd !== USER_PASSWORDS[sel]) {
-    errEl.textContent = '⚠ Invalid credentials.';
-    errEl.classList.add('show');
-    return;
+  if (!password) {
+    errEl.textContent = '⚠ Access code required.';
+    errEl.classList.add('show'); return;
   }
 
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Authenticating...`;
   errEl.classList.remove('show');
-  currentUser = sel;
 
-  // Init user store if first time
-  if (!userDataStore[currentUser]) userDataStore[currentUser] = [];
+  try {
+    showLoader('Authenticating with SAGE backend...');
+    const data = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
 
-  // Update masthead
-  const initials = sel.split('-')[0].substring(0,2).toUpperCase();
-  document.getElementById('userAvatar').textContent = initials;
-  document.getElementById('userPillName').textContent = sel.split('@')[0];
+    // Guardar token SOLO en localStorage (persiste entre pestañas,
+    // reinicios del navegador, y se puede recuperar al volver a entrar)
+    localStorage.setItem('ua_token', data.token);
+    localStorage.setItem('ua_user', JSON.stringify(data.user));
 
-  // Animate out login, show app
-  const loginEl = document.getElementById('screenLogin');
-  loginEl.classList.add('exiting');
+    currentUser = data.user;
+    enterApp();
+
+  } catch (err) {
+    errEl.textContent = err.status === 401
+      ? '⚠ Invalid credentials. Check username and password.'
+      : `⚠ ${err.message}`;
+    errEl.classList.add('show');
+  } finally {
+    hideLoader();
+    btn.disabled = false;
+    btn.innerHTML = `<svg style="width:16px;height:16px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;vertical-align:middle;margin-right:6px" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Authenticate &amp; Enter`;
+  }
+}
+
+/* ── AUTO-LOGIN si hay token guardado ───────────────────── */
+async function tryAutoLogin() {
+  const token = localStorage.getItem('ua_token');
+  const saved = localStorage.getItem('ua_user');
+  if (!token || !saved) return;
+
+  try {
+    showLoader('Restoring session...');
+    const data = await apiFetch('/api/auth/me');
+    currentUser = data.user;
+    enterApp();
+  } catch {
+    // Token expirado o inválido — limpiar
+    localStorage.removeItem('ua_token');
+    localStorage.removeItem('ua_user');
+  } finally {
+    hideLoader();
+  }
+}
+
+/* ── ENTER APP (after successful auth) ──────────────────── */
+function enterApp() {
+  const initials = currentUser.username.split('-')[0].substring(0,2).toUpperCase();
+  document.getElementById('userAvatar').textContent   = initials;
+  document.getElementById('userPillName').textContent = currentUser.username.split('@')[0];
+
+  document.getElementById('screenLogin').classList.add('exiting');
   setTimeout(() => {
-    loginEl.style.display = 'none';
-    document.getElementById('appShell').style.display = 'block';
+    document.getElementById('screenLogin').style.display = 'none';
+    document.getElementById('appShell').style.display    = 'block';
     navegarA('screenHome');
     initScrollReveal();
   }, 600);
 }
 
+/* ── LOGOUT ─────────────────────────────────────────────── */
 function doLogout() {
   currentUser = null;
-  mapaTacto = null;
+  mapaTacto   = null;
+  localStorage.removeItem('ua_token');
+  localStorage.removeItem('ua_user');
+
   document.getElementById('appShell').style.display = 'none';
   const loginEl = document.getElementById('screenLogin');
   loginEl.classList.remove('exiting');
   loginEl.style.display = 'flex';
   document.getElementById('loginUserSelect').value = '';
-  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginPassword').value   = '';
   document.getElementById('loginError').classList.remove('show');
-  // Reset form
+
   const f = document.getElementById('sageForm');
   if (f) f.reset();
   document.querySelectorAll('.sub-group').forEach(sg => sg.style.display = 'none');
@@ -1303,24 +1452,10 @@ function inicializarMapaNativo() {
   }).addTo(mapaTacto);
   grupoMarcadores = L.layerGroup().addTo(mapaTacto);
 
-  const reportsToShow = getVisibleReports();
-  reportsToShow.forEach(rep => dibujarPin(rep));
-
-  if (urlGoogleSheets) {
-    fetch(urlGoogleSheets).then(r=>r.json()).then(data=>{
-      if (!Array.isArray(data)) return;
-      data.forEach(rep => {
-        if (currentUser === MOLOS_USER || rep.author === currentUser) {
-          const store = userDataStore[currentUser] || [];
-          if (!store.some(r => String(r.id) === String(rep.id))) {
-            if (!userDataStore[currentUser]) userDataStore[currentUser] = [];
-            userDataStore[currentUser].push(rep);
-            dibujarPin(rep);
-          }
-        }
-      });
-    }).catch(()=>{});
-  }
+  // Cargar reportes desde el backend y pintarlos
+  apiFetch('/api/reports').then(reports => {
+    reports.forEach(rep => dibujarPin(rep));
+  }).catch(()=>{});
 
   setTimeout(()=>mapaTacto.invalidateSize(),300);
 }
@@ -1336,24 +1471,15 @@ function dibujarPin(rep) {
     <strong style="color:#009EDB;font-size:14px;">${rep.id||'#'} — ${rep.title||'Report'}</strong>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0;">
     <b>What:</b> ${rep.what||'N/A'}<br><b>Who:</b> ${rep.who||'N/A'}<br>
-    <b>Location:</b> ${rep.where||'N/A'}<br><b>Officer:</b> ${rep.author||'N/A'}<br>
+    <b>Location:</b> ${rep.where||'N/A'}<br><b>Officer:</b> ${rep.authorDisplay||rep.author||'N/A'}<br>
     <b>Status:</b> <span style="color:${sColor};font-weight:700;">${rep.status||'OPEN'}</span>
   </div>`;
   L.marker([coords[0],coords[1]]).addTo(grupoMarcadores).bindPopup(popup);
 }
 
-/* ── DATA ACCESS CONTROL ────────────────────────────────── */
-function getVisibleReports() {
-  if (currentUser === MOLOS_USER) {
-    // MOLOS sees all
-    const all = [];
-    Object.values(userDataStore).forEach(arr => arr.forEach(r => {
-      if (!all.some(x => x.id === r.id)) all.push(r);
-    }));
-    return all.sort((a,b) => String(a.id).localeCompare(String(b.id)));
-  }
-  return userDataStore[currentUser] || [];
-}
+/* ── DATA ACCESS CONTROL (delegada al backend) ──────────── */
+// El backend ya filtra: operadores ven solo sus reportes,
+// MOLOS ve todos. Aquí simplemente cargamos lo que devuelve la API.
 
 /* ── FORM HELPERS ───────────────────────────────────────── */
 function controlarSubCategorias(tipo) {
@@ -1401,8 +1527,8 @@ function convertirMGRSaDecimal() {
   }
 }
 
-/* ── SUBMIT FORM ────────────────────────────────────────── */
-function validarYGuardarFormulario(event) {
+/* ── SUBMIT FORM (POST real al backend) ─────────────────── */
+async function validarYGuardarFormulario(event) {
   event.preventDefault();
   const alertBox = document.getElementById('feedbackAlert');
   alertBox.style.cssText = `display:block;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#F59E0B;`;
@@ -1427,132 +1553,133 @@ function validarYGuardarFormulario(event) {
   let finalSector = mainSector;
   if (mainSector==='SECTOR 1') finalSector+=` / ${document.getElementById('subSector1Select').value}`;
 
-  const reporteID = `#${secuencialID++}`;
-  const mgrsVal = document.getElementById('mgrsInput').value;
-  const decVal = document.getElementById('decimalInput').value;
+  const mgrsVal   = document.getElementById('mgrsInput').value;
+  const decVal    = document.getElementById('decimalInput').value;
+  const reportCode= `#${reportCounter++}`;
 
-  const datos = {
-    id: reporteID,
-    eventDate: `${document.getElementById('evDate').value} — ${document.getElementById('evTime').value}`,
-    categories: document.getElementById('inputForm').value,
-    title: document.getElementById('inputTitle').value,
-    what: finalWhat,
-    where: `${finalSector} (MGRS: ${mgrsVal} → Dec: ${decVal} — ${document.getElementById('inputLocName').value})`,
-    who: finalWho,
-    author: currentUser,                // store with current user as author
-    authorDisplay: document.getElementById('inputOfficer').value,
-    sectorBase: mainSector,
-    submitDate: `${document.getElementById('repDate').value} — ${document.getElementById('repTime').value}`,
-    status: document.getElementById('inputStatus').value,
-    latLon: decVal,
-    fileUrl: "No attachment",
-    submittedBy: currentUser
-  };
-
+  // Subir imagen si existe
+  let fileUrl = 'No attachment';
   const fi = document.getElementById('fileInput');
   if (fi?.files?.length) {
     const file = fi.files[0];
     if (file.size/1024/1024 > 5) {
-      alertBox.style.cssText = `display:block;background:var(--danger-bg);border:1px solid rgba(239,68,68,.3);color:#F87171;`;
-      alertBox.innerHTML = '⚠ File exceeds 5MB limit.';
-      return;
+      alertBox.style.cssText = `display:block;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#F87171;`;
+      alertBox.innerHTML = '⚠ File exceeds 5MB limit.'; return;
     }
-    const fd = new FormData(); fd.append('image',file);
-    fetch('https://api.imgbb.com/1/upload?key=618fc3ec3585f3a63407dac1c5085d92',{method:'POST',body:fd})
-      .then(r=>r.json()).then(res=>{
-        datos.fileUrl = res.success&&res.data?res.data.url:"No attachment";
-        enviarFinal();
-      }).catch(()=>{datos.fileUrl="No attachment";enviarFinal()});
-  } else {
-    enviarFinal();
+    try {
+      const fd = new FormData(); fd.append('image', file);
+      const imgRes = await fetch('https://api.imgbb.com/1/upload?key=618fc3ec3585f3a63407dac1c5085d92',{method:'POST',body:fd});
+      const imgData = await imgRes.json();
+      if (imgData.success) fileUrl = imgData.data.url;
+    } catch { /* continuar sin imagen */ }
   }
 
-  function enviarFinal() {
-    // Save to user's local store
-    if (!userDataStore[currentUser]) userDataStore[currentUser] = [];
-    userDataStore[currentUser].push(datos);
+  const payload = {
+    report_code:    reportCode,
+    event_date:     `${document.getElementById('evDate').value} — ${document.getElementById('evTime').value}`,
+    categories:     document.getElementById('inputForm').value,
+    title:          document.getElementById('inputTitle').value,
+    what:           finalWhat,
+    who:            finalWho,
+    where:          `${finalSector} (MGRS: ${mgrsVal} → Dec: ${decVal} — ${document.getElementById('inputLocName').value})`,
+    sector_base:    mainSector,
+    submit_date:    `${document.getElementById('repDate').value} — ${document.getElementById('repTime').value}`,
+    status:         document.getElementById('inputStatus').value,
+    lat_lon:        decVal,
+    file_url:       fileUrl,
+    author_display: document.getElementById('inputOfficer').value,
+    description:    document.getElementById('incidentDesc').value,
+  };
 
-    // Also post to Google Sheets
-    const fb = new FormData();
-    Object.entries(datos).forEach(([k,v])=>fb.append(k,v));
-    fetch(urlGoogleSheets,{method:'POST',body:fb})
-      .then(()=>{
-        alertBox.style.cssText = `display:block;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#10B981;`;
-        alertBox.innerHTML = `✓ Report ${reporteID} submitted successfully to SAGE.`;
-        document.getElementById('sageForm').reset();
-        document.querySelectorAll('.sub-group').forEach(sg=>sg.style.display='none');
-        setTimeout(()=>{alertBox.style.display='none';irABaseDatos('screenSageHub')},2000);
-      })
-      .catch(()=>{
-        // Still saved locally
-        alertBox.style.cssText = `display:block;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#F59E0B;`;
-        alertBox.innerHTML = `⚠ Report ${reporteID} saved locally. Network error — not synced to cloud.`;
-        setTimeout(()=>{alertBox.style.display='none';irABaseDatos('screenSageHub')},3000);
-      });
+  try {
+    await apiFetch('/api/reports', { method:'POST', body:JSON.stringify(payload) });
+    alertBox.style.cssText = `display:block;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#10B981;`;
+    alertBox.innerHTML = `✓ Report ${reportCode} saved permanently to SAGE database.`;
+    document.getElementById('sageForm').reset();
+    document.querySelectorAll('.sub-group').forEach(sg=>sg.style.display='none');
+    setTimeout(()=>{ alertBox.style.display='none'; irABaseDatos('screenSageHub'); }, 2000);
+  } catch(err) {
+    alertBox.style.cssText = `display:block;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#F87171;`;
+    alertBox.innerHTML = `✗ Error: ${err.message}. Check connection and try again.`;
   }
 }
 
-/* ── RENDER TABLE ───────────────────────────────────────── */
-function renderizarTabla() {
-  const tbody = document.getElementById('dbTableBody');
-  const countEl = document.getElementById('dbCount');
-  const subtitleEl = document.getElementById('dbSubtitle');
+/* ── RENDER TABLE (carga desde el backend) ──────────────── */
+async function renderizarTabla() {
+  const tbody     = document.getElementById('dbTableBody');
+  const countEl   = document.getElementById('dbCount');
+  const subtitleEl= document.getElementById('dbSubtitle');
   const mlosBadge = document.getElementById('mlosBadge');
   if (!tbody) return;
 
-  const isMolos = currentUser === MOLOS_USER;
+  const isMolos = currentUser?.role === 'molos';
   mlosBadge.style.display = isMolos ? 'inline-flex' : 'none';
-  subtitleEl.textContent = isMolos
+  subtitleEl.textContent  = isMolos
     ? 'All operators — full access'
-    : `Showing reports for: ${currentUser?.split('@')[0] || '—'}`;
+    : `Showing reports for: ${currentUser?.username?.split('@')[0] || '—'}`;
 
-  const reports = getVisibleReports();
-  tbody.innerHTML = '';
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">
+    <span class="spinner"></span> Loading from database...
+  </td></tr>`;
 
-  if (!reports.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
-      <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-      <p>${isMolos ? 'No reports in the system yet.' : 'No reports submitted by this operator yet.'}</p>
-    </div></td></tr>`;
-    if (countEl) countEl.textContent = '0 reports';
-    return;
-  }
+  try {
+    const reports = await apiFetch('/api/reports');
 
-  if (countEl) countEl.textContent = `${reports.length} report${reports.length!==1?'s':''}`;
+    if (!reports.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        <p>${isMolos ? 'No reports in the system yet.' : 'No reports submitted by this operator yet.'}</p>
+      </div></td></tr>`;
+      if (countEl) countEl.textContent = '0 reports';
+      return;
+    }
 
-  for (let i = reports.length-1; i >= 0; i--) {
-    const rep = reports[i];
-    const att = (rep.fileUrl && rep.fileUrl!=="No attachment" && rep.fileUrl.startsWith('http'))
-      ? `<a href="${rep.fileUrl}" target="_blank" style="color:var(--un);text-decoration:none;font-weight:600;">View ↗</a>`
-      : `<span style="color:var(--text-3);font-style:italic;">None</span>`;
-    const statusBadge = rep.status==='OPEN'
-      ? `<span class="badge badge-open">● OPEN</span>`
-      : `<span class="badge badge-close">● CLOSED</span>`;
-    const authorDisplay = rep.authorDisplay || rep.author || '—';
-    const ownerNote = isMolos && rep.submittedBy
-      ? `<br><span style="font-size:10px;color:var(--text-3)">📡 ${rep.submittedBy.split('@')[0]}</span>` : '';
+    if (countEl) countEl.textContent = `${reports.length} report${reports.length!==1?'s':''}`;
+    tbody.innerHTML = '';
 
-    tbody.innerHTML += `<tr>
-      <td><span class="badge badge-id">${rep.id}</span></td>
-      <td style="white-space:nowrap">${rep.eventDate}</td>
-      <td style="font-weight:600;max-width:160px">${rep.title||'—'}</td>
-      <td style="max-width:260px;font-size:11px;color:var(--text-2)">
-        <strong>What:</strong> ${rep.what}<br>
-        <strong>Who:</strong> ${rep.who}<br>
-        <strong>Where:</strong> ${rep.where}
-      </td>
-      <td>${authorDisplay}${ownerNote}</td>
-      <td>${statusBadge}</td>
-      <td>${att}</td>
-    </tr>`;
+    reports.forEach(rep => {
+      const att = (rep.fileUrl && rep.fileUrl!=='No attachment' && rep.fileUrl.startsWith('http'))
+        ? `<a href="${rep.fileUrl}" target="_blank" style="color:var(--un);text-decoration:none;font-weight:600;">View ↗</a>`
+        : `<span style="color:var(--text-3);font-style:italic;">None</span>`;
+      const statusBadge = rep.status==='OPEN'
+        ? `<span class="badge badge-open">● OPEN</span>`
+        : `<span class="badge badge-close">● CLOSED</span>`;
+      const authorDisplay = rep.authorDisplay || rep.author || '—';
+      const ownerNote = isMolos && rep.submittedBy
+        ? `<br><span style="font-size:10px;color:var(--text-3)">📡 ${rep.submittedBy.split('@')[0]}</span>` : '';
+
+      tbody.innerHTML += `<tr>
+        <td><span class="badge badge-id">${rep.id}</span></td>
+        <td style="white-space:nowrap">${rep.eventDate||'—'}</td>
+        <td style="font-weight:600;max-width:160px">${rep.title||'—'}</td>
+        <td style="max-width:260px;font-size:11px;color:var(--text-2)">
+          <strong>What:</strong> ${rep.what||'—'}<br>
+          <strong>Who:</strong> ${rep.who||'—'}<br>
+          <strong>Where:</strong> ${rep.where||'—'}
+        </td>
+        <td>${authorDisplay}${ownerNote}</td>
+        <td>${statusBadge}</td>
+        <td>${att}</td>
+      </tr>`;
+    });
+
+  } catch(err) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#F87171;padding:32px">
+      ✗ Could not load reports: ${err.message}
+    </td></tr>`;
   }
 }
 
-/* ── ENTER KEY ON LOGIN ─────────────────────────────────── */
+/* ── ENTER KEY & AUTO-LOGIN ON PAGE LOAD ────────────────── */
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('screenLogin').style.display !== 'none') {
     doLogin(e);
   }
+});
+
+// Intentar auto-login con token guardado al cargar la página
+window.addEventListener('DOMContentLoaded', () => {
+  tryAutoLogin();
 });
 </script>
 </body>
